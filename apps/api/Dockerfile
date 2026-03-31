@@ -17,10 +17,8 @@ RUN npm ci
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Copy node_modules from deps
+# npm workspaces hoist semua ke root node_modules
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules 2>/dev/null || true
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules 2>/dev/null || true
 
 # Copy source
 COPY package.json turbo.json ./
@@ -30,7 +28,7 @@ COPY apps/api ./apps/api
 # Generate Prisma client
 RUN cd apps/api && npx prisma generate
 
-# Build shared → dist (so API can resolve imports)
+# Build shared → dist
 RUN cd packages/shared && npx tsc --outDir dist || true
 
 # Build API → dist
