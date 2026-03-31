@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background -->
+  <rect width="512" height="512" rx="128" fill="#2E7D5A"/>
+  <!-- Wallet body -->
+  <rect x="96" y="160" width="320" height="220" rx="24" fill="white" opacity="0.95"/>
+  <!-- Wallet flap -->
+  <rect x="96" y="160" width="320" height="72" rx="24" fill="white"/>
+  <!-- Wallet card slot -->
+  <rect x="280" y="216" width="96" height="60" rx="12" fill="#2E7D5A" opacity="0.15"/>
+  <circle cx="328" cy="246" r="16" fill="#2E7D5A" opacity="0.3"/>
+  <!-- Coin symbol -->
+  <circle cx="192" cy="320" r="32" fill="#2E7D5A" opacity="0.12"/>
+  <text x="192" y="330" text-anchor="middle" font-size="32" fill="#2E7D5A" font-family="system-ui" font-weight="bold">Rp</text>
+</svg>

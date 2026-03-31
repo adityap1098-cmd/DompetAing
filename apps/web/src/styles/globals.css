@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Default color scheme (sage_green) — overridden at runtime via JS style.setProperty.
+       Console test: document.documentElement.style.setProperty('--accent', '#1A56DB') */
+    --accent:      #2E7D5A;
+    --accent-dark: #4CAF7A;
+    --accent-600:  #256845;
+    --accent-50:   #F0FAF5;
+    --accent-100:  #DCF4E8;
+
+    --income:      #1E8A5A;
+    --income-dark: #4CAF7A;
+    --expense:     #C94A1C;
+    --expense-dark: #E87340;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #F7F6F3;
+    color: #1A1917;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  /* Dark mode background handled by Tailwind dark: prefix in AppShell */
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .safe-pb {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+
+  .safe-pt {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* Bottom nav safe area */
+.bottom-nav-height {
+  height: calc(4rem + env(safe-area-inset-bottom));
+}
+
+.content-with-nav {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom) + 0.5rem);
+}

@@ -1,0 +1,94 @@
+version: "3.8"
+
+services:
+  # ── PostgreSQL ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: dompetaing_postgres
+    environment:
+      POSTGRES_DB: dompetaing
+      POSTGRES_USER: dompetaing
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - internal
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dompetaing -d dompetaing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── API (Hono + Prisma) ──
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: dompetaing_api
+    env_file: .env.production
+    environment:
+      DATABASE_URL: postgresql://dompetaing:${DB_PASSWORD}@postgres:5432/dompetaing
+      NODE_ENV: production
+      PORT: "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── Web (React SPA via nginx) ──
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: https://api.dompetaing.usahasukses.net/v1
+    container_name: dompetaing_web
+    networks:
+      - internal
+    restart: always
+
+  # ── Nginx Reverse Proxy + SSL ──
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: dompetaing_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - letsencrypt_data:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - internal
+    restart: always
+
+  # ── Certbot (auto-renew setiap 12 jam) ──
+  certbot:
+    image: certbot/certbot
+    container_name: dompetaing_certbot
+    volumes:
+      - letsencrypt_data:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  letsencrypt_data:
+  certbot_webroot:
+
+networks:
+  internal:
+    driver: bridge

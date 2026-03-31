@@ -1,0 +1,335 @@
+// ══════════════════════════════════════
+// prisma/schema.prisma
+// ══════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── USER ──
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  avatar_url     String?
+  google_id      String   @unique
+  // Google OAuth tokens untuk Gmail API
+  access_token   String?
+  refresh_token  String?
+  token_expiry   DateTime?
+  // Preferences
+  currency       String   @default("IDR")
+  locale         String   @default("id")
+  theme          String   @default("light")
+  color_scheme   String   @default("sage_green")
+  pin_hash       String?
+  hide_balance   Boolean  @default(false)
+  // Notification preferences
+  notif_budget_threshold  Int     @default(80)
+  notif_weekly_report     Boolean @default(true)
+  notif_transaction       Boolean @default(false)
+  notif_debt_reminder     Boolean @default(true)
+  // Gmail sync preferences
+  gmail_connected    Boolean @default(false)
+  gmail_auto_sync    Boolean @default(true)
+  gmail_sync_interval Int    @default(15)
+  gmail_auto_categorize Boolean @default(true)
+  gmail_review_before_save Boolean @default(true)
+  gmail_last_sync    DateTime?
+  gmail_last_history_id String?
+  // Timestamps
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  // Relations
+  accounts       Account[]
+  categories     Category[]
+  transactions   Transaction[]
+  budgets        Budget[]
+  debts          Debt[]
+  recurring      RecurringTransaction[]
+  gmail_sources  GmailSource[]
+  pending_reviews PendingReview[]
+  subscription   Subscription?
+  payments       Payment[]
+  notifications  Notification[]
+
+  @@map("users")
+}
+
+// ── SUBSCRIPTION ──
+model Subscription {
+  id             String   @id @default(cuid())
+  user_id        String   @unique
+  plan           String   @default("trial")
+  trial_start    DateTime @default(now())
+  trial_end      DateTime
+  premium_start  DateTime?
+  premium_end    DateTime?
+  midtrans_subscription_id String?
+  is_active      Boolean  @default(true)
+  auto_renew     Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  payments       Payment[]
+
+  @@map("subscriptions")
+}
+
+// ── PAYMENT ──
+model Payment {
+  id                 String   @id @default(cuid())
+  user_id            String
+  subscription_id    String
+  midtrans_order_id  String   @unique
+  midtrans_transaction_id String?
+  amount             Decimal  @db.Decimal(15, 2)
+  currency           String   @default("IDR")
+  status             String   @default("pending")
+  payment_method     String?
+  paid_at            DateTime?
+  period_start       DateTime
+  period_end         DateTime
+  midtrans_response  String?  @db.Text
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  user               User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  subscription       Subscription @relation(fields: [subscription_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("payments")
+}
+
+// ── ACCOUNT ──
+model Account {
+  id             String   @id @default(cuid())
+  user_id        String
+  name           String
+  type           String
+  bank_name      String?
+  account_type   String?
+  last_four      String?
+  initial_balance Decimal @default(0) @db.Decimal(15, 2)
+  color          String   @default("#2E7D5A")
+  icon           String   @default("🏦")
+  is_active      Boolean  @default(true)
+  sort_order     Int      @default(0)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions_from Transaction[] @relation("FromAccount")
+  transactions_to   Transaction[] @relation("ToAccount")
+
+  @@map("accounts")
+}
+
+// ── CATEGORY ──
+model Category {
+  id             String   @id @default(cuid())
+  user_id        String
+  name           String
+  icon           String
+  color          String
+  type           String
+  is_system      Boolean  @default(false)
+  sort_order     Int      @default(0)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  sub_categories SubCategory[]
+  transactions   Transaction[]
+  budgets        Budget[]
+
+  @@unique([user_id, name])
+  @@map("categories")
+}
+
+// ── SUB-CATEGORY ──
+model SubCategory {
+  id             String   @id @default(cuid())
+  category_id    String
+  name           String
+  sort_order     Int      @default(0)
+  created_at     DateTime @default(now())
+
+  category       Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+
+  @@unique([category_id, name])
+  @@map("sub_categories")
+}
+
+// ── TRANSACTION ──
+model Transaction {
+  id              String   @id @default(cuid())
+  user_id         String
+  amount          Decimal  @db.Decimal(15, 2)
+  type            String
+  category_id     String?
+  sub_category_id String?
+  account_id      String
+  to_account_id   String?
+  description     String
+  notes           String?
+  date            DateTime
+  source          String   @default("manual")
+  gmail_message_id String?
+  recurring_id    String?
+  debt_id         String?
+  is_verified     Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category        Category? @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  sub_category    SubCategory? @relation(fields: [sub_category_id], references: [id], onDelete: SetNull)
+  account         Account  @relation("FromAccount", fields: [account_id], references: [id], onDelete: Cascade)
+  to_account      Account? @relation("ToAccount", fields: [to_account_id], references: [id])
+  debt            Debt?    @relation(fields: [debt_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, date])
+  @@index([user_id, type])
+  @@index([user_id, category_id])
+  @@index([account_id])
+  @@map("transactions")
+}
+
+// ── BUDGET ──
+model Budget {
+  id             String   @id @default(cuid())
+  user_id        String
+  category_id    String
+  amount         Decimal  @db.Decimal(15, 2)
+  period_type    String
+  period_month   Int?
+  period_year    Int?
+  start_date     DateTime?
+  end_date       DateTime?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category       Category @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, category_id, period_type, period_month, period_year])
+  @@map("budgets")
+}
+
+// ── DEBT ──
+model Debt {
+  id             String   @id @default(cuid())
+  user_id        String
+  type           String
+  person_name    String
+  amount         Decimal  @db.Decimal(15, 2)
+  description    String?
+  borrow_date    DateTime
+  due_date       DateTime?
+  is_paid        Boolean  @default(false)
+  paid_at        DateTime?
+  auto_record    Boolean  @default(true)
+  reminder_enabled Boolean @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+
+  @@index([user_id, is_paid])
+  @@map("debts")
+}
+
+// ── RECURRING TRANSACTION ──
+model RecurringTransaction {
+  id              String   @id @default(cuid())
+  user_id         String
+  description     String
+  amount          Decimal  @db.Decimal(15, 2)
+  type            String
+  category_id     String?
+  sub_category_id String?
+  account_id      String
+  frequency       String
+  day_of_week     Int?
+  day_of_month    Int?
+  active_days     String?
+  is_active       Boolean  @default(true)
+  next_run        DateTime
+  last_run        DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("recurring_transactions")
+}
+
+// ── GMAIL SOURCE ──
+model GmailSource {
+  id             String   @id @default(cuid())
+  user_id        String
+  bank_name      String
+  sender_email   String
+  sender_pattern String?
+  is_active      Boolean  @default(true)
+  total_detected Int      @default(0)
+  created_at     DateTime @default(now())
+
+  user           User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, sender_email])
+  @@map("gmail_sources")
+}
+
+// ── PENDING REVIEW ──
+model PendingReview {
+  id              String   @id @default(cuid())
+  user_id         String
+  gmail_message_id String
+  raw_subject     String
+  raw_body        String?
+  parsed_amount   Decimal? @db.Decimal(15, 2)
+  parsed_merchant String?
+  parsed_date     DateTime?
+  parsed_type     String?
+  suggested_category_id String?
+  suggested_sub_category_id String?
+  suggested_account_id String?
+  bank_name       String?
+  status          String   @default("pending")
+  created_at      DateTime @default(now())
+
+  user            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, status])
+  @@map("pending_reviews")
+}
+
+// ── NOTIFICATION ──
+model Notification {
+  id          String   @id @default(cuid())
+  user_id     String
+  type        String   // budget_alert | debt_reminder | weekly_report | transaction
+  title       String
+  body        String
+  is_read     Boolean  @default(false)
+  meta        String?  @db.Text  // JSON: { budget_id, debt_id, amount, etc }
+  created_at  DateTime @default(now())
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+  @@index([user_id, created_at])
+  @@map("notifications")
+}

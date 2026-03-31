@@ -1,0 +1,35 @@
+{
+  "name": "@dompetaing/api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js",
+    "type-check": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@dompetaing/shared": "*",
+    "@hono/node-server": "^1.13.7",
+    "@prisma/client": "^6.2.1",
+    "@types/bcryptjs": "^2.4.6",
+    "arctic": "^3.4.0",
+    "bcryptjs": "^3.0.3",
+    "hono": "^4.6.20",
+    "iron-session": "^8.0.4",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "prisma": "^6.2.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

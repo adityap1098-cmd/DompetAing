@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#2E7D5A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="DompetAing" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <title>DompetAing</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Apply color scheme from localStorage before React hydrates (prevents FOUC) -->
+    <script>
+      (function () {
+        try {
+          var S = {
+            sage_green:    ["#2E7D5A","#4CAF7A","#256845","#F0FAF5","#DCF4E8"],
+            ocean_blue:    ["#1A56DB","#4879EB","#1444AF","#EBF5FE","#D2EBF9"],
+            royal_purple:  ["#7B3FA8","#AC70D2","#622F87","#F8F2FE","#EDDEFC"],
+            sunset_orange: ["#D65C2E","#EB8C5A","#B24923","#FEF5EF","#FCE6D7"],
+            teal_green:    ["#0E9494","#3CBEBE","#0A7676","#ECFCFC","#CCF7F7"],
+            hot_pink:      ["#C44569","#E47094","#A03455","#FEF2F7","#FBDDE9"],
+            navy_blue:     ["#1F3A93","#4C69BE","#182D73","#EEF2FF","#DBE5FF"],
+            steel_gray:    ["#475569","#64748B","#334155","#F8FAFC","#F1F5F9"]
+          };
+          var key = localStorage.getItem("da_scheme");
+          var c = (key && S[key]) ? S[key] : S.sage_green;
+          var r = document.documentElement;
+          r.style.setProperty("--accent",      c[0]);
+          r.style.setProperty("--accent-dark",  c[1]);
+          r.style.setProperty("--accent-600",   c[2]);
+          r.style.setProperty("--accent-50",    c[3]);
+          r.style.setProperty("--accent-100",   c[4]);
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
