@@ -7,7 +7,7 @@
 #   ./deploy.sh --build      # Build images only
 #   ./deploy.sh --migrate    # Run migrations only
 #   ./deploy.sh --restart    # Restart containers only
-#   ./deploy.sh --ssl-init   # First-time SSL via certbot
+#   ./deploy.sh --nginx      # Setup nginx site config + SSL
 #   ./deploy.sh --status     # Container status
 #   ./deploy.sh --logs       # Tail all logs
 #   ./deploy.sh --logs api   # Tail API logs only
@@ -30,12 +30,10 @@ cd "$(dirname "$0")"
 check_env() {
     if [ ! -f .env.production ]; then
         err ".env.production not found!"
-        err "Copy template dan isi semua values terlebih dahulu."
         exit 1
     fi
-    # Cek ada nilai yang masih xxx
     if grep -q "=xxx$" .env.production; then
-        warn "Ada env vars yang masih 'xxx' di .env.production — pastikan sudah diisi sebelum production."
+        warn "Ada env vars yang masih 'xxx' di .env.production"
     fi
     log "✓ .env.production ready"
 }
@@ -50,7 +48,6 @@ pull() {
 # ── Build ──
 build() {
     log "Building Docker images..."
-    # DB_PASSWORD dibutuhkan docker-compose.yml
     export $(grep '^DB_PASSWORD=' .env.production | xargs)
     docker compose --env-file .env.production build --parallel
     log "✓ Images built"
@@ -59,10 +56,8 @@ build() {
 # ── Migrate ──
 migrate() {
     log "Running database migrations..."
-    # Pastikan postgres jalan
     export $(grep '^DB_PASSWORD=' .env.production | xargs)
     docker compose --env-file .env.production up -d postgres
-    # Tunggu healthy
     log "Waiting for postgres..."
     for i in $(seq 1 15); do
         if docker compose --env-file .env.production exec -T postgres pg_isready -U dompetaing -d dompetaing >/dev/null 2>&1; then
@@ -70,23 +65,20 @@ migrate() {
         fi
         sleep 2
     done
-
-    # Jalankan migrate deploy di container api (one-off)
     docker compose --env-file .env.production run --rm api \
         sh -c "cd /app/apps/api && npx prisma migrate deploy"
-
     log "✓ Migrations applied"
 }
 
 # ── Restart ──
 restart() {
-    log "Starting all containers..."
+    log "Starting containers..."
     export $(grep '^DB_PASSWORD=' .env.production | xargs)
     docker compose --env-file .env.production up -d
     log "Waiting for API health..."
     sleep 5
     for i in $(seq 1 20); do
-        if docker compose --env-file .env.production exec -T api wget -qO- http://localhost:3001/v1/health >/dev/null 2>&1; then
+        if curl -sf http://127.0.0.1:3001/v1/health >/dev/null 2>&1; then
             log "✓ API healthy"
             return
         fi
@@ -113,31 +105,33 @@ deploy() {
     status
 }
 
-# ── SSL Init ──
-ssl_init() {
-    check_env
-    export $(grep '^DB_PASSWORD=' .env.production | xargs)
+# ── Nginx Setup ──
+setup_nginx() {
+    log "Setting up nginx site config..."
 
-    log "Starting nginx for ACME challenge..."
-    docker compose --env-file .env.production up -d nginx
+    sudo cp nginx-site.conf /etc/nginx/sites-available/dompetaing
+    sudo ln -sf /etc/nginx/sites-available/dompetaing /etc/nginx/sites-enabled/dompetaing
 
-    log "Requesting SSL certificate..."
-    docker compose --env-file .env.production run --rm certbot certonly \
-        --webroot -w /var/www/certbot \
-        --email admin@usahasukses.net \
-        --agree-tos \
-        --no-eff-email \
+    log "Testing nginx config..."
+    if sudo nginx -t 2>&1; then
+        sudo systemctl reload nginx
+        log "✓ Nginx configured & reloaded"
+    else
+        err "Nginx config test failed!"
+        exit 1
+    fi
+
+    echo ""
+    log "Setting up SSL with certbot..."
+    sudo certbot --nginx \
         -d dompetaing.usahasukses.net \
         -d api.dompetaing.usahasukses.net
 
-    log "✓ SSL certificate obtained!"
-    echo ""
-    log "Langkah selanjutnya:"
-    log "  1. Edit nginx.conf:"
-    log "     - Uncomment kedua blok HTTPS (web + API)"
-    log "     - Hapus blok 'SEBELUM SSL' di server HTTP"
-    log "     - Uncomment redirect HTTP→HTTPS"
-    log "  2. Jalankan: docker compose restart nginx"
+    log "✓ SSL configured!"
+    log ""
+    log "Sites live:"
+    log "  https://dompetaing.usahasukses.net"
+    log "  https://api.dompetaing.usahasukses.net"
 }
 
 # ── Status ──
@@ -161,7 +155,7 @@ case "${1:-}" in
     --build)    check_env; build ;;
     --migrate)  check_env; migrate ;;
     --restart)  check_env; restart ;;
-    --ssl-init) ssl_init ;;
+    --nginx)    setup_nginx ;;
     --status)   status ;;
     --logs)     logs "${2:-}" ;;
     -h|--help)
@@ -171,9 +165,9 @@ case "${1:-}" in
         echo "  --build         Build Docker images saja"
         echo "  --migrate       Jalankan Prisma migrations saja"
         echo "  --restart       Restart containers saja"
-        echo "  --ssl-init      Setup SSL pertama kali (certbot)"
+        echo "  --nginx         Setup nginx site + SSL (certbot)"
         echo "  --status        Lihat status containers"
-        echo "  --logs [svc]    Tail logs (api, web, nginx, postgres)"
+        echo "  --logs [svc]    Tail logs (api, web, postgres)"
         echo "  --help          Tampilkan bantuan ini"
         ;;
     *)          deploy ;;
