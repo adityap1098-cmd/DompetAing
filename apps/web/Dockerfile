@@ -28,6 +28,9 @@ COPY package.json turbo.json ./
 COPY packages/shared ./packages/shared
 COPY apps/web ./apps/web
 
+# Build shared package dulu (web imports dari @dompetaing/shared)
+RUN cd packages/shared && npx tsc --outDir dist
+
 RUN cd apps/web && npx vite build
 
 # ── Stage 3: Serve via nginx ──
