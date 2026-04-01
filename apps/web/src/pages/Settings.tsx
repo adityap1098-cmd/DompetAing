@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
-import { Card } from "@/components/ui/Card";
 import { Toggle } from "@/components/ui/Toggle";
-import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
+import { PinModal } from "@/components/pin/PinModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useThemeStore } from "@/store/theme";
-import { useUpdatePreferences, useUpdateNotifications, useSecurityAction } from "@/hooks/useSettings";
+import { useUpdatePreferences, useUpdateNotifications } from "@/hooks/useSettings";
+import { usePush } from "@/hooks/usePush";
 import { applyColorScheme } from "@/hooks/useColorScheme";
 import { showToast } from "@/components/ui/Toast";
 import { formatDate } from "@/lib/format";
@@ -34,162 +33,6 @@ const THEMED_SCHEME_LIST = [
   { id: "batik_heritage", label: "Batik Heritage",  color: "#8B4513", emoji: "🪭" },
 ];
 
-// ── PIN Modal ──
-function PinModal({
-  pinSet,
-  onClose,
-}: {
-  pinSet: boolean;
-  onClose: () => void;
-}) {
-  const [mode, setMode] = useState<"set" | "remove">(pinSet ? "remove" : "set");
-  const [currentPin, setCurrentPin] = useState("");
-  const [newPin, setNewPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
-  const { mutateAsync, isPending } = useSecurityAction();
-
-  async function handleSubmit() {
-    if (mode === "set") {
-      if (!/^\d{4,6}$/.test(newPin)) {
-        showToast("PIN harus 4-6 digit angka", "error");
-        return;
-      }
-      if (newPin !== confirmPin) {
-        showToast("Konfirmasi PIN tidak cocok", "error");
-        return;
-      }
-      try {
-        await mutateAsync({
-          action: "set_pin",
-          pin: newPin,
-          ...(pinSet && currentPin ? { current_pin: currentPin } : {}),
-        });
-        showToast("PIN berhasil " + (pinSet ? "diubah" : "dipasang"), "success");
-        onClose();
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Gagal menyimpan PIN";
-        showToast(msg, "error");
-      }
-    } else {
-      try {
-        await mutateAsync({ action: "remove_pin", current_pin: currentPin });
-        showToast("PIN berhasil dihapus", "success");
-        onClose();
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Gagal menghapus PIN";
-        showToast(msg, "error");
-      }
-    }
-  }
-
-  return (
-    <Modal isOpen title={pinSet ? "Kelola PIN" : "Pasang PIN"} onClose={onClose}>
-      <div className="space-y-4">
-        {pinSet && (
-          <div className="flex gap-2 border-b border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] pb-3">
-            <button
-              onClick={() => setMode("set")}
-              className={`text-[11px] font-semibold px-3 py-1 rounded-full transition-colors ${
-                mode === "set"
-                  ? "bg-accent-500 dark:bg-accent-dark text-white"
-                  : "text-[#6B6864] dark:text-[#9E9B96]"
-              }`}
-            >
-              Ubah PIN
-            </button>
-            <button
-              onClick={() => setMode("remove")}
-              className={`text-[11px] font-semibold px-3 py-1 rounded-full transition-colors ${
-                mode === "remove"
-                  ? "bg-[#C94A1C] text-white"
-                  : "text-[#6B6864] dark:text-[#9E9B96]"
-              }`}
-            >
-              Hapus PIN
-            </button>
-          </div>
-        )}
-
-        {(pinSet && mode === "set") && (
-          <div>
-            <label className="block text-[10px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1">
-              PIN saat ini
-            </label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={currentPin}
-              onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
-              placeholder="••••"
-              className="w-full px-3 py-2 text-sm border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[10px] bg-[#F7F6F3] dark:bg-[#1C1D1A] text-[#1A1917] dark:text-[#F0EEE9] text-center tracking-[0.5em]"
-            />
-          </div>
-        )}
-
-        {mode === "remove" && (
-          <div>
-            <label className="block text-[10px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1">
-              Masukkan PIN untuk konfirmasi
-            </label>
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={currentPin}
-              onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, ""))}
-              placeholder="••••"
-              className="w-full px-3 py-2 text-sm border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[10px] bg-[#F7F6F3] dark:bg-[#1C1D1A] text-[#1A1917] dark:text-[#F0EEE9] text-center tracking-[0.5em]"
-            />
-          </div>
-        )}
-
-        {mode === "set" && (
-          <>
-            <div>
-              <label className="block text-[10px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1">
-                PIN baru (4-6 digit)
-              </label>
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={6}
-                value={newPin}
-                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
-                placeholder="••••"
-                className="w-full px-3 py-2 text-sm border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[10px] bg-[#F7F6F3] dark:bg-[#1C1D1A] text-[#1A1917] dark:text-[#F0EEE9] text-center tracking-[0.5em]"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1">
-                Konfirmasi PIN baru
-              </label>
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={6}
-                value={confirmPin}
-                onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
-                placeholder="••••"
-                className="w-full px-3 py-2 text-sm border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[10px] bg-[#F7F6F3] dark:bg-[#1C1D1A] text-[#1A1917] dark:text-[#F0EEE9] text-center tracking-[0.5em]"
-              />
-            </div>
-          </>
-        )}
-
-        <Button
-          fullWidth
-          variant={mode === "remove" ? "danger" : "primary"}
-          onClick={handleSubmit}
-          loading={isPending}
-        >
-          {mode === "remove" ? "Hapus PIN" : pinSet ? "Ubah PIN" : "Pasang PIN"}
-        </Button>
-      </div>
-    </Modal>
-  );
-}
-
 // ── Main Page ──
 export function SettingsPage() {
   const { user, logout, isLoggingOut } = useAuth();
@@ -200,6 +43,7 @@ export function SettingsPage() {
   const { mutate: updateNotifs } = useUpdateNotifications();
 
   const [showPinModal, setShowPinModal] = useState(false);
+  const { supported: pushSupported, isEnabled: pushEnabled, isBlocked: pushBlocked, loading: pushLoading, requestPermission: requestPush } = usePush();
 
   function handleThemeChange(dark: boolean) {
     const next = dark ? "dark" : "light";
@@ -376,6 +220,32 @@ export function SettingsPage() {
             Notifikasi
           </p>
           <div className="divide-y divide-[rgba(0,0,0,0.06)] dark:divide-[rgba(255,255,255,0.06)]">
+            {/* Push notification toggle */}
+            {pushSupported && (
+              <div className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-[12px] text-[#1A1917] dark:text-[#F0EEE9]">Notifikasi Push</p>
+                  <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5">
+                    {pushBlocked
+                      ? "Diblokir di browser. Aktifkan di pengaturan browser."
+                      : pushEnabled
+                        ? "Aktif — notifikasi akan muncul di HP"
+                        : "Terima notifikasi langsung ke perangkat"}
+                  </p>
+                </div>
+                {pushBlocked ? (
+                  <span className="text-[9px] bg-[#C94A1C]/10 dark:bg-[#E87340]/10 text-[#C94A1C] dark:text-[#E87340] px-2 py-0.5 rounded-full font-semibold">
+                    Diblokir
+                  </span>
+                ) : (
+                  <Toggle
+                    checked={pushEnabled}
+                    onChange={() => !pushEnabled && requestPush()}
+                    disabled={pushLoading || pushEnabled}
+                  />
+                )}
+              </div>
+            )}
             <div className="flex items-center justify-between px-4 py-3">
               <div>
                 <p className="text-[12px] text-[#1A1917] dark:text-[#F0EEE9]">Laporan Mingguan</p>

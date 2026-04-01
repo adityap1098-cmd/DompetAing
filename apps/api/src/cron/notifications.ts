@@ -1,27 +1,7 @@
 import { prisma } from "../lib/db.js";
+import { pushBudgetAlert, pushDebtReminder, pushWeeklyReport } from "../services/push.service.js";
 
 const CRON_BATCH_SIZE = 100; // process at most 100 users per cron tick
-
-// ── Helper: create a notification ──
-async function createNotif(
-  user_id: string,
-  type: string,
-  title: string,
-  body: string,
-  ref_id: string,         // canonical dedup key (budget_id, debt_id, or user_id+date)
-  meta?: Record<string, unknown>
-) {
-  await prisma.notification.create({
-    data: {
-      user_id,
-      type,
-      title,
-      body,
-      // Store ref_id as a top-level key so dedup can use an exact match
-      meta: JSON.stringify({ ref_id, ...(meta ?? {}) }),
-    },
-  });
-}
 
 // ── Exact-match dedup: check by type + ref_id stored in meta ──
 async function alreadySent(
@@ -30,7 +10,6 @@ async function alreadySent(
   ref_id: string,
   since: Date
 ): Promise<boolean> {
-  // Pull notifications of this type for this user since `since`, check ref_id in app layer
   const candidates = await prisma.notification.findMany({
     where: { user_id, type, created_at: { gte: since } },
     select: { meta: true },
@@ -93,16 +72,9 @@ async function runBudgetAlerts() {
         if (await alreadySent(user.id, "budget_alert", refId, startDate)) continue;
 
         const icon = budget.category.icon ?? "💰";
-        const label = pct >= 100 ? "melebihi batas" : `sudah ${pct}%`;
+        const remaining = budgetAmount - spent;
 
-        await createNotif(
-          user.id,
-          "budget_alert",
-          `${icon} Budget ${budget.category.name} ${label}`,
-          `Kamu ${pct >= 100 ? "telah melampaui" : "hampir mencapai"} batas budget ${budget.category.name} bulan ini (${pct}% terpakai).`,
-          refId,
-          { budget_id: budget.id, category_name: budget.category.name, pct, spent }
-        );
+        await pushBudgetAlert(user.id, budget.category.name, icon, pct, remaining, budget.id);
       } catch (err) {
         console.error(`[NotifCron] budget alert error user=${user.id} budget=${budget.id}:`, err);
       }
@@ -133,23 +105,10 @@ async function runDebtReminders() {
 
   for (const debt of debts) {
     try {
-      // Dedup: one reminder per debt per day
       const refId = `debt:${debt.id}:${todayStart.toISOString().slice(0, 10)}`;
       if (await alreadySent(debt.user.id, "debt_reminder", refId, todayStart)) continue;
 
-      const typeLabel = debt.type === "borrow" ? "Hutang" : "Piutang";
-      const amountFmt = new Intl.NumberFormat("id-ID", {
-        style: "currency", currency: "IDR", minimumFractionDigits: 0,
-      }).format(Number(debt.amount));
-
-      await createNotif(
-        debt.user.id,
-        "debt_reminder",
-        `⏰ ${typeLabel} jatuh tempo besok`,
-        `${typeLabel} ke ${debt.person_name} sebesar ${amountFmt} jatuh tempo besok. Jangan lupa!`,
-        refId,
-        { debt_id: debt.id, person_name: debt.person_name, amount: Number(debt.amount), type: debt.type }
-      );
+      await pushDebtReminder(debt.user.id, debt.type, debt.person_name, Number(debt.amount), debt.id);
     } catch (err) {
       console.error(`[NotifCron] debt reminder error debt=${debt.id}:`, err);
     }
@@ -170,7 +129,7 @@ async function runWeeklyReport() {
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const weekKey = todayStart.toISOString().slice(0, 10); // e.g. "2026-03-30"
+  const weekKey = todayStart.toISOString().slice(0, 10);
 
   const users = await prisma.user.findMany({
     where: { notif_weekly_report: true },
@@ -183,35 +142,14 @@ async function runWeeklyReport() {
       const refId = `weekly:${user.id}:${weekKey}`;
       if (await alreadySent(user.id, "weekly_report", refId, todayStart)) continue;
 
-      const [incomeAgg, expenseAgg] = await Promise.all([
-        prisma.transaction.aggregate({
-          where: { user_id: user.id, type: "income", date: { gte: lastMonday, lte: lastSunday } },
-          _sum: { amount: true },
-        }),
-        prisma.transaction.aggregate({
-          where: { user_id: user.id, type: "expense", date: { gte: lastMonday, lte: lastSunday } },
-          _sum: { amount: true },
-        }),
-      ]);
+      const expenseAgg = await prisma.transaction.aggregate({
+        where: { user_id: user.id, type: "expense", date: { gte: lastMonday, lte: lastSunday } },
+        _sum: { amount: true },
+      });
 
-      const income = Number(incomeAgg._sum.amount ?? 0);
       const expense = Number(expenseAgg._sum.amount ?? 0);
-      const net = income - expense;
 
-      const fmt = (n: number) =>
-        new Intl.NumberFormat("id-ID", {
-          style: "currency", currency: "IDR", minimumFractionDigits: 0,
-        }).format(n);
-
-      const sign = net >= 0 ? "+" : "";
-      await createNotif(
-        user.id,
-        "weekly_report",
-        "📊 Laporan Mingguan",
-        `Minggu lalu: Pemasukan ${fmt(income)}, Pengeluaran ${fmt(expense)}. Saldo bersih ${sign}${fmt(net)}.`,
-        refId,
-        { income, expense, net, from: lastMonday.toISOString(), to: lastSunday.toISOString() }
-      );
+      await pushWeeklyReport(user.id, expense);
     } catch (err) {
       console.error(`[NotifCron] weekly report error user=${user.id}:`, err);
     }
@@ -222,7 +160,6 @@ async function runWeeklyReport() {
 let cronTimeout: ReturnType<typeof setTimeout> | null = null;
 
 async function runNotificationCron() {
-  // Run each function independently so one failure doesn't block the others
   await Promise.allSettled([
     runBudgetAlerts(),
     runDebtReminders(),
@@ -236,7 +173,6 @@ async function runNotificationCron() {
     });
   });
 
-  // Schedule next run in 1 hour
   cronTimeout = setTimeout(runNotificationCron, 60 * 60 * 1000);
 }
 

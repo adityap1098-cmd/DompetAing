@@ -7,6 +7,7 @@ import { prisma } from "../lib/db.js";
 import { googleGmail, GMAIL_SCOPES, fetchGoogleUserInfo } from "../lib/google.js";
 import { fetchGmailProfile } from "../lib/gmail.js";
 import { syncGmailForUser, getGmailStats, debugSyncForUser } from "../lib/gmailSync.js";
+import { pushGmailSync } from "../services/push.service.js";
 import { env } from "../env.js";
 import { ok, fail } from "@dompetaing/shared";
 import { computeAccountBalance } from "../lib/computed.js";
@@ -159,6 +160,12 @@ gmail.post("/sync", requireFeature("gmail_sync"), async (c) => {
   try {
     // Manual sync always scans 6 months back (dedup prevents re-creating same PendingReview)
     const result = await syncGmailForUser(user.id, true);
+
+    // Send push if new transactions found
+    if (result.transactions_found > 0) {
+      pushGmailSync(user.id, result.transactions_found).catch(() => {});
+    }
+
     return c.json(ok({
       ...result,
       summary: `${result.transactions_found} transaksi ditemukan` +

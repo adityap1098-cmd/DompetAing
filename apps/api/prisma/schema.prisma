@@ -34,6 +34,7 @@ model User {
   notif_weekly_report     Boolean @default(true)
   notif_transaction       Boolean @default(false)
   notif_debt_reminder     Boolean @default(true)
+  notif_push              Boolean @default(true)
   // Gmail sync preferences
   gmail_connected    Boolean @default(false)
   gmail_auto_sync    Boolean @default(true)
@@ -58,6 +59,7 @@ model User {
   subscription   Subscription?
   payments       Payment[]
   notifications  Notification[]
+  push_subscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -332,4 +334,20 @@ model Notification {
   @@index([user_id, is_read])
   @@index([user_id, created_at])
   @@map("notifications")
+}
+
+// ── PUSH SUBSCRIPTION (FCM) ──
+model PushSubscription {
+  id         String   @id @default(cuid())
+  user_id    String
+  fcm_token  String
+  device     String?  // "web", "android", "ios"
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, fcm_token])
+  @@index([user_id, is_active])
+  @@map("push_subscriptions")
 }

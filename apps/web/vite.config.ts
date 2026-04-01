@@ -13,6 +13,12 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         skipWaiting: true,
         clientsClaim: true,
+        // Force cache invalidation on new deploys
+        additionalManifestEntries: [
+          { url: "/index.html", revision: Date.now().toString() },
+        ],
+        cleanupOutdatedCaches: true,
+        navigateFallback: "/index.html",
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -43,6 +49,8 @@ export default defineConfig({
         display: "standalone",
         orientation: "portrait",
         start_url: "/",
+        // Required for Firebase Cloud Messaging
+        gcm_sender_id: "103953800507",
         icons: [
           {
             src: "icons/icon.svg",

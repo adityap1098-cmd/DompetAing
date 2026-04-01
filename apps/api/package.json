@@ -21,6 +21,7 @@
     "@types/bcryptjs": "^2.4.6",
     "arctic": "^3.4.0",
     "bcryptjs": "^3.0.3",
+    "firebase-admin": "^13.7.0",
     "hono": "^4.6.20",
     "iron-session": "^8.0.4",
     "xlsx": "^0.18.5",

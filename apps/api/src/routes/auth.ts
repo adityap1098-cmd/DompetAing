@@ -167,6 +167,7 @@ auth.get("/me", requireAuth, async (c) => {
       notif_weekly_report: user.notif_weekly_report,
       notif_transaction: user.notif_transaction,
       notif_debt_reminder: user.notif_debt_reminder,
+      notif_push: user.notif_push,
       pin_set: !!user.pin_hash,
       is_admin: isAdminEmail(user.email),
       created_at: user.created_at,

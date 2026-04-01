@@ -30,9 +30,9 @@ import { ImportPage } from "@/pages/Import";
 import { PaymentSuccessPage } from "@/pages/PaymentSuccess";
 import { AdminPage } from "@/pages/Admin";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicy";
+import { PinLockScreen } from "@/components/pin/PinLockScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useSecurityAction } from "@/hooks/useSettings";
 import { DashboardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ApiError } from "@/lib/api";
 
@@ -50,68 +50,6 @@ const queryClient = new QueryClient({
 
 // ── PIN Lock Screen ──
 const PIN_SESSION_KEY = "da_pin_unlocked";
-
-function PinLockScreen({ onUnlock }: { onUnlock: () => void }) {
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState("");
-  const { mutate, isPending } = useSecurityAction();
-
-  function handleVerify() {
-    if (!/^\d{4,6}$/.test(pin)) {
-      setError("Masukkan PIN 4-6 digit");
-      return;
-    }
-    mutate(
-      { action: "verify_pin", pin },
-      {
-        onSuccess: () => {
-          sessionStorage.setItem(PIN_SESSION_KEY, "1");
-          onUnlock();
-        },
-        onError: () => {
-          setError("PIN salah, coba lagi");
-          setPin("");
-        },
-      }
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F7F6F3] dark:bg-[#111210] px-8">
-      <div className="text-4xl mb-6">🔒</div>
-      <h2 className="text-[20px] font-bold text-[#1A1917] dark:text-[#F0EEE9] mb-1">
-        Masukkan PIN
-      </h2>
-      <p className="text-[12px] text-[#6B6864] dark:text-[#9E9B96] mb-8 text-center">
-        Masukkan PIN untuk membuka DompetAing
-      </p>
-      <input
-        type="password"
-        inputMode="numeric"
-        maxLength={6}
-        value={pin}
-        onChange={(e) => {
-          setPin(e.target.value.replace(/\D/g, ""));
-          setError("");
-        }}
-        onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-        autoFocus
-        placeholder="••••"
-        className="w-48 text-center text-2xl tracking-[0.5em] px-4 py-3 border-2 border-[rgba(0,0,0,0.12)] dark:border-[rgba(255,255,255,0.1)] rounded-[14px] bg-white dark:bg-[#1C1D1A] text-[#1A1917] dark:text-[#F0EEE9] focus:border-accent-500 dark:focus:border-accent-dark outline-none mb-2"
-      />
-      {error && (
-        <p className="text-[12px] text-[#C94A1C] dark:text-[#E87340] mb-4">{error}</p>
-      )}
-      <button
-        onClick={handleVerify}
-        disabled={isPending || pin.length < 4}
-        className="mt-4 px-8 py-3 bg-accent-500 dark:bg-accent-dark text-white rounded-[12px] text-[13px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isPending ? "Memeriksa..." : "Buka"}
-      </button>
-    </div>
-  );
-}
 
 // ── Protected Route Guard ──
 function ProtectedLayout() {

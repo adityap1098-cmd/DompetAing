@@ -19,6 +19,7 @@ interface UpdateNotificationsPayload {
   notif_weekly_report?: boolean;
   notif_transaction?: boolean;
   notif_debt_reminder?: boolean;
+  notif_push?: boolean;
 }
 
 interface SecurityPayload {

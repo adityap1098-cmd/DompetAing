@@ -130,6 +130,7 @@ settings.put("/notifications", async (c) => {
     notif_weekly_report?: boolean;
     notif_transaction?: boolean;
     notif_debt_reminder?: boolean;
+    notif_push?: boolean;
   };
 
   if (
@@ -146,12 +147,14 @@ settings.put("/notifications", async (c) => {
       ...(body.notif_weekly_report !== undefined && { notif_weekly_report: body.notif_weekly_report }),
       ...(body.notif_transaction !== undefined && { notif_transaction: body.notif_transaction }),
       ...(body.notif_debt_reminder !== undefined && { notif_debt_reminder: body.notif_debt_reminder }),
+      ...(body.notif_push !== undefined && { notif_push: body.notif_push }),
     },
     select: {
       notif_budget_threshold: true,
       notif_weekly_report: true,
       notif_transaction: true,
       notif_debt_reminder: true,
+      notif_push: true,
     },
   });
 

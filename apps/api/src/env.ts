@@ -27,4 +27,8 @@ export const env = {
   MIDTRANS_SERVER_KEY: optional("MIDTRANS_SERVER_KEY", ""),
   MIDTRANS_CLIENT_KEY: optional("MIDTRANS_CLIENT_KEY", ""),
   MIDTRANS_IS_PRODUCTION: optional("MIDTRANS_IS_PRODUCTION", "false") === "true",
+  // Firebase (push notifications)
+  FIREBASE_PROJECT_ID: optional("FIREBASE_PROJECT_ID", ""),
+  FIREBASE_CLIENT_EMAIL: optional("FIREBASE_CLIENT_EMAIL", ""),
+  FIREBASE_PRIVATE_KEY: optional("FIREBASE_PRIVATE_KEY", ""),
 } as const;
