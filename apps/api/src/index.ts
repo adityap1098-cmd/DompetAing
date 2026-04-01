@@ -20,6 +20,7 @@ import gmailRoutes from "./routes/gmail.js";
 import settingsRoutes from "./routes/settings.js";
 import notificationsRoutes from "./routes/notifications.js";
 import importRoutes from "./routes/import.js";
+import adminRoutes from "./routes/admin.js";
 import { startRecurringCron } from "./cron/recurring.js";
 import { startGmailCron } from "./cron/gmail.js";
 import { startNotificationCron } from "./cron/notifications.js";
@@ -59,6 +60,7 @@ app.route("/gmail", gmailRoutes);
 app.route("/settings", settingsRoutes);
 app.route("/notifications", notificationsRoutes);
 app.route("/import", importRoutes);
+app.route("/admin", adminRoutes);
 
 // ── 404 handler ──
 app.notFound((c) =>

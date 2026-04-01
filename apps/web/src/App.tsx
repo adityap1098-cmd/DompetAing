@@ -28,6 +28,7 @@ import { GmailSyncPage } from "@/pages/GmailSync";
 import { NotificationsPage } from "@/pages/Notifications";
 import { ImportPage } from "@/pages/Import";
 import { PaymentSuccessPage } from "@/pages/PaymentSuccess";
+import { AdminPage } from "@/pages/Admin";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -185,6 +186,7 @@ function AppRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/import" element={<ImportPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/admin" element={<AdminPage />} />
       </Route>
 
       {/* Default redirect */}

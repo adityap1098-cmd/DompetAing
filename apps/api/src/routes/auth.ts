@@ -142,6 +142,7 @@ auth.post("/logout", requireAuth, async (c) => {
 // ── GET /auth/me ──
 auth.get("/me", requireAuth, async (c) => {
   const user = c.get("user");
+  const { isAdminEmail } = await import("../middleware/admin.js");
 
   return c.json({
     success: true,
@@ -167,6 +168,7 @@ auth.get("/me", requireAuth, async (c) => {
       notif_transaction: user.notif_transaction,
       notif_debt_reminder: user.notif_debt_reminder,
       pin_set: !!user.pin_hash,
+      is_admin: isAdminEmail(user.email),
       created_at: user.created_at,
       updated_at: user.updated_at,
     },

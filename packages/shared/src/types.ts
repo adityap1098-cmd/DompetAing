@@ -38,6 +38,7 @@ export interface User {
   notif_transaction: boolean;
   notif_debt_reminder: boolean;
   pin_set: boolean;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }

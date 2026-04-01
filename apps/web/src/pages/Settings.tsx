@@ -433,6 +433,9 @@ export function SettingsPage() {
             { icon: "📧", label: "Gmail Sync", to: "/gmail-sync" },
             { icon: "📤", label: "Export Data", to: "/export" },
             { icon: "📥", label: "Import CSV", to: "/import" },
+            ...((user as typeof user & { is_admin?: boolean }).is_admin
+              ? [{ icon: "🛡️", label: "Admin Dashboard", to: "/admin" }]
+              : []),
           ].map((item, i, arr) => (
             <Link
               key={item.to}
