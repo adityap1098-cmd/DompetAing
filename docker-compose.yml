@@ -50,7 +50,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        VITE_API_URL: https://dompetaing.usahasukses.net/v1
+        VITE_API_URL: https://dompetapi.usahasukses.net/v1
     container_name: dompetaing_web
     ports:
       - "127.0.0.1:3010:80"
