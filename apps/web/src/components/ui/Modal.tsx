@@ -79,7 +79,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
 
         {/* Content */}
         <div className="overflow-y-auto flex-1 overscroll-contain">
-          {children}
+          {isOpen ? children : null}
         </div>
       </div>
     </>
