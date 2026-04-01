@@ -127,6 +127,7 @@ export function FilterPanel({ isOpen, onClose, values, onApply }: FilterPanelPro
         </div>
 
         {/* Scrollable content */}
+        {isOpen && (
         <div className="overflow-y-auto flex-1 overscroll-contain px-4 py-4 space-y-5">
           {/* Type */}
           <section>
@@ -240,6 +241,7 @@ export function FilterPanel({ isOpen, onClose, values, onApply }: FilterPanelPro
             </div>
           </section>
         </div>
+        )}
 
         {/* Footer */}
         <div className="shrink-0 px-4 py-4 border-t border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] flex gap-3">
