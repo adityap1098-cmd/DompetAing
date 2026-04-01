@@ -12,6 +12,15 @@ export interface GmailSource {
   created_at: string;
 }
 
+export interface MarketplaceSource {
+  id: string;
+  marketplace_name: string;
+  sender_email: string;
+  is_active: boolean;
+  total_detected: number;
+  created_at: string;
+}
+
 export interface GmailStatus {
   connected: boolean;
   email: string;
@@ -19,12 +28,14 @@ export interface GmailStatus {
   transactions_detected: number;
   accuracy: number;
   pending_count: number;
+  enriched_count: number;
   last_sync: string | null;
   auto_sync: boolean;
   sync_interval: number;
   review_before_save: boolean;
   auto_categorize: boolean;
   sources: GmailSource[];
+  marketplace_sources: MarketplaceSource[];
 }
 
 export interface PendingReview {
@@ -46,7 +57,10 @@ export interface SyncResult {
   emails_processed: number;
   transactions_found: number;
   pending_review: number;
+  enriched: number;
   banks_detected: { bank_name: string; sender_email: string; count: number }[];
+  marketplaces_detected: { marketplace_name: string; sender_email: string; count: number }[];
+  summary: string;
 }
 
 export interface ApprovePayload {

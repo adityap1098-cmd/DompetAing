@@ -96,6 +96,11 @@ export function LoginPage() {
         <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948] text-center mt-4">
           Trial 30 hari gratis. Tidak perlu kartu kredit.
         </p>
+        <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948] text-center mt-2">
+          <a href="/privacy" className="underline hover:text-accent-500 dark:hover:text-accent-dark">
+            Kebijakan Privasi
+          </a>
+        </p>
       </div>
     </div>
   );

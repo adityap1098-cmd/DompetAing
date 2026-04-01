@@ -28,6 +28,7 @@ import { GmailSyncPage } from "@/pages/GmailSync";
 import { NotificationsPage } from "@/pages/Notifications";
 import { ImportPage } from "@/pages/Import";
 import { PaymentSuccessPage } from "@/pages/PaymentSuccess";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicy";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useSecurityAction } from "@/hooks/useSettings";
@@ -161,6 +162,8 @@ function AppRoutes() {
       {/* Public routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/onboarding" element={<OnboardingPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<Navigate to="/privacy" replace />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedLayout />}>

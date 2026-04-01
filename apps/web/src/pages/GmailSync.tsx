@@ -20,6 +20,7 @@ import {
   useUpdateGmailSettings,
   type PendingReview,
   type ApprovePayload,
+  type MarketplaceSource,
 } from "@/hooks/useGmail";
 
 // ── UpgradePrompt ──
@@ -58,9 +59,15 @@ const ALL_BANKS = [
   { name: "SeaBank", color: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-700 dark:text-teal-300" },
 ];
 
-const BANK_COLORS: Record<string, string> = Object.fromEntries(
-  ALL_BANKS.map((b) => [b.name, `${b.color} ${b.text}`])
-);
+const BANK_COLORS: Record<string, string> = {
+  ...Object.fromEntries(ALL_BANKS.map((b) => [b.name, `${b.color} ${b.text}`])),
+  // Marketplace colors
+  Shopee: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+  Tokopedia: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+  Grab: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300",
+  Gojek: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+  Traveloka: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+};
 
 const SUPPORTED_BANK_LIST = [
   { key: "Jago",      label: "Bank Jago",       colorClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300" },
@@ -73,6 +80,14 @@ const SUPPORTED_BANK_LIST = [
   { key: "DANA",      label: "DANA",            colorClass: "bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300" },
   { key: "ShopeePay", label: "ShopeePay",       colorClass: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300" },
   { key: "SeaBank",   label: "SeaBank",         colorClass: "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300" },
+];
+
+const SUPPORTED_MARKETPLACE_LIST = [
+  { key: "Shopee",     label: "Shopee",          colorClass: "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300", icon: "🛒" },
+  { key: "Tokopedia",  label: "Tokopedia",       colorClass: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300", icon: "🏪" },
+  { key: "Grab",       label: "Grab",            colorClass: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300", icon: "🚗" },
+  { key: "Gojek",      label: "Gojek",           colorClass: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300", icon: "🏍️" },
+  { key: "Traveloka",  label: "Traveloka",       colorClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300", icon: "✈️" },
 ];
 
 function NotConnected({ onConnect, isLoading }: { onConnect: () => void; isLoading: boolean }) {
@@ -101,6 +116,19 @@ function NotConnected({ onConnect, isLoading }: { onConnect: () => void; isLoadi
               className={`rounded-[8px] p-2 text-center text-[9px] font-semibold ${b.color} ${b.text}`}
             >
               {b.name}
+            </div>
+          ))}
+        </div>
+        <h4 className="text-[12px] font-bold text-[#1A1917] dark:text-[#F0EEE9] mt-4 mb-3">
+          Marketplace & layanan yang didukung
+        </h4>
+        <div className="grid grid-cols-5 gap-2">
+          {SUPPORTED_MARKETPLACE_LIST.map((mp) => (
+            <div
+              key={mp.key}
+              className={`rounded-[8px] p-2 text-center text-[9px] font-semibold ${mp.colorClass}`}
+            >
+              {mp.icon} {mp.key}
             </div>
           ))}
         </div>
@@ -461,7 +489,7 @@ export function GmailSyncPage() {
           </div>
           <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mb-3">{status.email}</p>
 
-          <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="grid grid-cols-4 gap-2 text-center">
             <div className="bg-[#F7F6F3] dark:bg-[#111210] rounded-[10px] p-2">
               <p className="text-[16px] font-bold font-mono text-[#1A1917] dark:text-[#F0EEE9]">
                 {status.transactions_detected}
@@ -473,6 +501,12 @@ export function GmailSyncPage() {
                 {status.pending_count}
               </p>
               <p className="text-[9px] text-[#9E9B98] dark:text-[#4A4948]">Pending</p>
+            </div>
+            <div className="bg-[#F7F6F3] dark:bg-[#111210] rounded-[10px] p-2">
+              <p className="text-[16px] font-bold font-mono text-blue-600 dark:text-blue-400">
+                {status.enriched_count}
+              </p>
+              <p className="text-[9px] text-[#9E9B98] dark:text-[#4A4948]">Diperkaya</p>
             </div>
             <div className="bg-[#F7F6F3] dark:bg-[#111210] rounded-[10px] p-2">
               <p className="text-[16px] font-bold font-mono text-accent-500 dark:text-accent-dark">
@@ -492,10 +526,9 @@ export function GmailSyncPage() {
               onClick={() => {
                 sync(undefined, {
                   onSuccess: (result) => {
-                    showToast(
-                      `Sync selesai — ${result.transactions_found} transaksi ditemukan`,
-                      "success"
-                    );
+                    const parts = [`${result.transactions_found} transaksi ditemukan`];
+                    if (result.enriched > 0) parts.push(`${result.enriched} diperkaya`);
+                    showToast(`Sync selesai — ${parts.join(", ")}`, "success");
                   },
                   onError: () => showToast("Sync gagal", "error"),
                 });
@@ -596,47 +629,123 @@ export function GmailSyncPage() {
 
         {/* Tab: Sources */}
         {activeTab === "sources" && (
-          <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] overflow-hidden divide-y divide-[rgba(0,0,0,0.06)] dark:divide-[rgba(255,255,255,0.06)]">
-            {SUPPORTED_BANK_LIST.map((bank) => {
-              const source = status.sources.find((s) => s.bank_name === bank.key);
-              return (
-                <div key={bank.key} className="flex items-center gap-3 px-4 py-3">
-                  <div
-                    className={`w-8 h-8 rounded-[9px] flex items-center justify-center text-[9px] font-bold shrink-0 ${
-                      source
-                        ? bank.colorClass
-                        : "bg-[#F0EEE9] dark:bg-[#242522] text-[#9E9B98] dark:text-[#4A4948]"
-                    }`}
-                  >
-                    {bank.key.slice(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className={`text-[12px] font-semibold ${
-                      source ? "text-[#1A1917] dark:text-[#F0EEE9]" : "text-[#9E9B98] dark:text-[#4A4948]"
-                    }`}>
-                      {bank.label}
-                    </p>
-                    {source ? (
-                      <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5 truncate">
-                        {source.total_detected} email · {source.sender_email}
-                      </p>
-                    ) : (
-                      <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948] mt-0.5">
-                        Belum terdeteksi
-                      </p>
-                    )}
-                  </div>
-                  {source ? (
-                    <Toggle
-                      checked={source.is_active}
-                      onChange={() => toggleSource(source.id)}
-                    />
-                  ) : (
-                    <div className="w-10 h-5 rounded-full bg-[#F0EEE9] dark:bg-[#242522] opacity-40 shrink-0" />
-                  )}
+          <div className="space-y-3">
+            {/* Bank sources */}
+            <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] overflow-hidden">
+              <p className="px-4 pt-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#9E9B98] dark:text-[#4A4948]">
+                Bank & Dompet Digital
+              </p>
+              <div className="divide-y divide-[rgba(0,0,0,0.06)] dark:divide-[rgba(255,255,255,0.06)]">
+                {SUPPORTED_BANK_LIST.map((bank) => {
+                  const source = status.sources.find((s) => s.bank_name === bank.key);
+                  return (
+                    <div key={bank.key} className="flex items-center gap-3 px-4 py-3">
+                      <div
+                        className={`w-8 h-8 rounded-[9px] flex items-center justify-center text-[9px] font-bold shrink-0 ${
+                          source
+                            ? bank.colorClass
+                            : "bg-[#F0EEE9] dark:bg-[#242522] text-[#9E9B98] dark:text-[#4A4948]"
+                        }`}
+                      >
+                        {bank.key.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-semibold ${
+                          source ? "text-[#1A1917] dark:text-[#F0EEE9]" : "text-[#9E9B98] dark:text-[#4A4948]"
+                        }`}>
+                          {bank.label}
+                        </p>
+                        {source ? (
+                          <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5 truncate">
+                            {source.total_detected} email · {source.sender_email}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948] mt-0.5">
+                            Belum terdeteksi
+                          </p>
+                        )}
+                      </div>
+                      {source ? (
+                        <Toggle
+                          checked={source.is_active}
+                          onChange={() => toggleSource(source.id)}
+                        />
+                      ) : (
+                        <div className="w-10 h-5 rounded-full bg-[#F0EEE9] dark:bg-[#242522] opacity-40 shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Marketplace sources */}
+            <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] overflow-hidden">
+              <p className="px-4 pt-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-[#9E9B98] dark:text-[#4A4948]">
+                Marketplace & Layanan
+              </p>
+              <div className="divide-y divide-[rgba(0,0,0,0.06)] dark:divide-[rgba(255,255,255,0.06)]">
+                {SUPPORTED_MARKETPLACE_LIST.map((mp) => {
+                  const source = status.marketplace_sources.find(
+                    (s) => s.marketplace_name === mp.key
+                  );
+                  return (
+                    <div key={mp.key} className="flex items-center gap-3 px-4 py-3">
+                      <div
+                        className={`w-8 h-8 rounded-[9px] flex items-center justify-center text-[14px] shrink-0 ${
+                          source
+                            ? mp.colorClass
+                            : "bg-[#F0EEE9] dark:bg-[#242522]"
+                        }`}
+                      >
+                        {mp.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-[12px] font-semibold ${
+                          source ? "text-[#1A1917] dark:text-[#F0EEE9]" : "text-[#9E9B98] dark:text-[#4A4948]"
+                        }`}>
+                          {mp.label}
+                        </p>
+                        {source ? (
+                          <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5 truncate">
+                            {source.total_detected} email · {source.sender_email}
+                          </p>
+                        ) : (
+                          <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948] mt-0.5">
+                            Belum terdeteksi
+                          </p>
+                        )}
+                      </div>
+                      {source ? (
+                        <Toggle
+                          checked={source.is_active}
+                          onChange={() => toggleSource(source.id)}
+                        />
+                      ) : (
+                        <div className="w-10 h-5 rounded-full bg-[#F0EEE9] dark:bg-[#242522] opacity-40 shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Anti-duplikat info card */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-[14px] border border-blue-200 dark:border-blue-800/40 p-4">
+              <div className="flex items-start gap-2">
+                <span className="text-[14px] shrink-0">🔗</span>
+                <div>
+                  <p className="text-[11px] font-bold text-blue-800 dark:text-blue-300 mb-1">
+                    Anti-duplikat aktif
+                  </p>
+                  <p className="text-[10px] text-blue-700 dark:text-blue-400">
+                    Email dari marketplace otomatis dicocokkan dengan transaksi bank.
+                    Jika nominal & tanggal cocok, deskripsi & kategori transaksi yang ada
+                    akan diperkaya — bukan dibuat duplikat.
+                  </p>
                 </div>
-              );
-            })}
+              </div>
+            </div>
           </div>
         )}
 

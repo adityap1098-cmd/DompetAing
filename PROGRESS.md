@@ -476,3 +476,111 @@ Cancel → auto_renew = false, premium stays until premium_end
 - Auto-renew saat ini hanya flag — production butuh Midtrans Recurring/Subscription API untuk charge otomatis
 - `FRONTEND_URL` harus di-set ke domain production untuk callback redirect
 
+---
+
+## M012 — Marketplace Email Parser ✅ DONE
+**Date:** 2026-04-01
+
+### Apa yang sudah dibuat
+
+**Backend — Marketplace Parsers:**
+- `apps/api/src/lib/marketplaceParsers.ts` — 5 marketplace parsers:
+  - **Shopee**: sender `noreply@shopee.co.id`, `notification@shopee.co.id`. Extract produk, toko, total bayar. Filter hanya email pesanan/pembayaran (skip promo).
+  - **Tokopedia**: sender `noreply@tokopedia.com`, `info@tokopedia.com`. Extract produk, toko, invoice number, total. Filter email invoice/pesanan.
+  - **Grab**: sender `noreply@grab.com`, `receipt@grab.com`. Deteksi tipe layanan (GrabFood/GrabCar/GrabBike), extract resto/tujuan, total.
+  - **Gojek**: sender `noreply@gojek.com`. Deteksi tipe layanan (GoFood/GoRide/GoCar), extract resto/tujuan, total. Filter hanya receipt (bukan GoPay payment notif).
+  - **Traveloka**: sender `noreply@traveloka.com`. Deteksi tipe booking (Flight/Hotel/Activity), extract detail, total. Filter hanya booking confirmation.
+- `detectMarketplace(sender, subject)` — deteksi marketplace dari sender email
+- `buildMarketplaceEmailQuery(afterDate)` — Gmail search query untuk marketplace senders
+- `suggestCategoryFromKeywords(text)` — Smart keyword → category mapping (9 kategori: Makanan & Minuman, Teknologi, Fashion, Kesehatan, Hiburan, Kecantikan, Rumah, dll)
+
+**Backend — Anti-Duplikat Logic (CRITICAL):**
+- `apps/api/src/lib/gmailSync.ts` — Full rewrite sync engine dengan 2-phase approach:
+  - **Phase 1**: Fetch bank emails (same as before) → create PendingReview
+  - **Phase 2**: Fetch marketplace emails → anti-duplikat check before creating
+  - `findMatchingBankTransaction(userId, amount, date)` — cari transaksi bank dengan:
+    - Amount tolerance: `±Rp 5.000` (untuk biaya admin marketplace)
+    - Date tolerance: `±1 hari`
+    - Source filter: hanya match `"gmail"` atau `"manual"` (bukan marketplace)
+  - **Jika match transaksi**: ENRICH transaksi yang ada → update `description` + `category_id` + set `source = "gmail_enriched"`
+  - **Jika match pending review bank**: ENRICH pending review → update `parsed_merchant` + `suggested_category_id` + gabung `bank_name`
+  - **Jika tidak match**: Buat pending review baru seperti biasa
+  - `suggestCategoryByName(userId, categoryName)` — match category by name (exact → partial → fallback to Belanja/Lainnya)
+  - `SyncResult` sekarang include field `enriched` dan `marketplaces_detected`
+  - `getGmailStats()` sekarang track `enriched` count (transactions with `source = "gmail_enriched"`)
+
+**Backend — Routes Update:**
+- `apps/api/src/routes/gmail.ts`:
+  - `GET /gmail/status` — sekarang return `sources` (bank only) + `marketplace_sources` (marketplace only) + `enriched_count`
+  - `POST /gmail/sync` — return `summary` string termasuk enriched count
+
+**Frontend — Hooks:**
+- `apps/web/src/hooks/useGmail.ts`:
+  - Tambah type `MarketplaceSource` (id, marketplace_name, sender_email, is_active, total_detected)
+  - `GmailStatus` sekarang include `marketplace_sources: MarketplaceSource[]` + `enriched_count: number`
+  - `SyncResult` include `enriched`, `marketplaces_detected`, `summary`
+
+**Frontend — GmailSync Page:**
+- `apps/web/src/pages/GmailSync.tsx`:
+  - **NotConnected page**: Tambah section "Marketplace & layanan yang didukung" (Shopee, Tokopedia, Grab, Gojek, Traveloka) di bawah bank list
+  - **Status card**: Grid 4 kolom (Terdeteksi, Pending, Diperkaya, Akurasi) — kolom "Diperkaya" baru untuk enriched count
+  - **Sync toast**: Tampil "X transaksi ditemukan, Y diperkaya" jika ada enrichment
+  - **Tab Sumber**:
+    - Section "Bank & Dompet Digital" (10 bank)
+    - Section "Marketplace & Layanan" (5 marketplace) dengan icon & toggle
+    - Info card "Anti-duplikat aktif" menjelaskan mekanisme enrichment
+  - **PendingItem**: Marketplace bank_name (Shopee, Tokopedia, dll) tampil dengan warna yang sesuai
+  - `SUPPORTED_MARKETPLACE_LIST` — 5 marketplace dengan icon + colorClass
+  - `BANK_COLORS` — extended dengan marketplace colors
+
+### Anti-Duplikat Flow
+```
+1. Sync bank email → buat PendingReview "Pembayaran ke Shopee Rp 178.000"
+   (kategori generic: Belanja)
+2. Sync marketplace email Shopee → cek amount ±Rp 5.000 & date ±1 hari
+3a. Jika match approved transaction:
+    → UPDATE description: "Shopee: Charger USB-C Fast Charging"
+    → UPDATE category: Teknologi (lebih spesifik)
+    → SET source: "gmail_enriched"
+3b. Jika match pending review:
+    → UPDATE pending review dengan detail marketplace
+    → Skip create duplicate
+4. Jika tidak match → buat PendingReview baru
+```
+
+### Smart Category Mapping
+```
+"makanan|food|resto|makan" → Makanan & Minuman
+"elektronik|gadget|phone|laptop|charger" → Teknologi
+"baju|celana|sepatu|fashion|pakaian" → Fashion
+"obat|vitamin|kesehatan" → Kesehatan
+"pulsa|internet|data" → Teknologi
+"hotel|flight|pesawat|tiket" → Hiburan
+"kecantikan|skincare|makeup|kosmetik" → Kecantikan
+"rumah|furniture|dapur|kasur" → Rumah
+fallback → Belanja
+```
+
+### Feature Gate
+- Marketplace parsing ikut feature gate `gmail_sync` (Premium only) — tidak perlu gate terpisah
+- Semua endpoint yang sudah di-gate (`POST /gmail/connect`, `POST /gmail/sync`) otomatis berlaku
+
+### Type-Check
+- ✅ `apps/api` — `npx tsc --noEmit` — 0 errors
+- ✅ `apps/web` — `npx tsc --noEmit` — 0 errors
+
+### Files Created
+- `apps/api/src/lib/marketplaceParsers.ts` — marketplace parsers + category mapping + detection
+
+### Files Modified
+- `apps/api/src/lib/gmailSync.ts` — full rewrite: 2-phase sync, anti-duplikat, enrichment
+- `apps/api/src/routes/gmail.ts` — marketplace_sources in status, enrichment stats
+- `apps/web/src/hooks/useGmail.ts` — MarketplaceSource type, enriched fields
+- `apps/web/src/pages/GmailSync.tsx` — marketplace sources UI, enriched stats, anti-duplikat info
+
+### Catatan
+- Marketplace parser menggunakan `bank_name` field di `GmailSource` untuk marketplace name (reuse existing schema — no migration needed)
+- `source = "gmail_enriched"` pada Transaction menandakan transaksi bank yang sudah diperkaya dengan detail marketplace
+- Gojek sender overlap dengan GoPay — marketplace parser memfilter berdasarkan content (receipt vs payment notif)
+- Amount tolerance Rp 5.000 mengakomodasi biaya admin/ongkir yang mungkin berbeda antara email bank dan marketplace
+

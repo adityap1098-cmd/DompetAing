@@ -107,6 +107,11 @@ gmail.get("/status", async (c) => {
       ? Math.round((stats.approved / (stats.approved + stats.skipped)) * 100)
       : 0;
 
+  // Separate bank vs marketplace sources
+  const MARKETPLACE_NAMES = ["Shopee", "Tokopedia", "Grab", "Gojek", "Traveloka"];
+  const bankSources = sources.filter((s) => !MARKETPLACE_NAMES.includes(s.bank_name));
+  const marketplaceSources = sources.filter((s) => MARKETPLACE_NAMES.includes(s.bank_name));
+
   return c.json(
     ok({
       connected: user.gmail_connected,
@@ -115,14 +120,23 @@ gmail.get("/status", async (c) => {
       transactions_detected: stats.transactions_detected,
       accuracy,
       pending_count: stats.pending,
+      enriched_count: stats.enriched,
       last_sync: user.gmail_last_sync,
       auto_sync: user.gmail_auto_sync,
       sync_interval: user.gmail_sync_interval,
       review_before_save: user.gmail_review_before_save,
       auto_categorize: user.gmail_auto_categorize,
-      sources: sources.map((s) => ({
+      sources: bankSources.map((s) => ({
         id: s.id,
         bank_name: s.bank_name,
+        sender_email: s.sender_email,
+        is_active: s.is_active,
+        total_detected: s.total_detected,
+        created_at: s.created_at,
+      })),
+      marketplace_sources: marketplaceSources.map((s) => ({
+        id: s.id,
+        marketplace_name: s.bank_name,
         sender_email: s.sender_email,
         is_active: s.is_active,
         total_detected: s.total_detected,
@@ -143,7 +157,11 @@ gmail.post("/sync", requireFeature("gmail_sync"), async (c) => {
   try {
     // Manual sync always scans 6 months back (dedup prevents re-creating same PendingReview)
     const result = await syncGmailForUser(user.id, true);
-    return c.json(ok(result));
+    return c.json(ok({
+      ...result,
+      summary: `${result.transactions_found} transaksi ditemukan` +
+        (result.enriched > 0 ? `, ${result.enriched} diperkaya` : ""),
+    }));
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Sync failed";
     return c.json(fail(msg), 500);

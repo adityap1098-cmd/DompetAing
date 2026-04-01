@@ -1528,6 +1528,107 @@ dompetaing/
 - Cancel premium → tetap aktif sampai premium_end, lalu downgrade
 
 ---
+M012 — Marketplace Email Parser
+Goal: Gmail sync juga membaca email dari marketplace (Shopee, Tokopedia, Grab, Gojek, Traveloka) untuk auto-kategorisasi yang lebih akurat.
+Deliverables:
+
+ Parser Shopee (email konfirmasi pesanan):
+
+Sender: noreply@shopee.co.id, notification@shopee.co.id
+Extract: nama produk, total bayar, tanggal, metode bayar
+Auto-kategori: mapping dari nama produk ke kategori (Elektronik, Fashion, Kecantikan, dll)
+Jika sudah ada transaksi dari bank untuk nominal + tanggal yang sama → JANGAN duplikat, tapi UPDATE deskripsi & kategori transaksi yang ada dengan info lebih detail dari Shopee
+
+
+ Parser Tokopedia (email invoice):
+
+Sender: noreply@tokopedia.com, info@tokopedia.com
+Extract: nama produk, total bayar, tanggal, invoice number
+Auto-kategori: sama seperti Shopee
+Anti-duplikat: sama seperti Shopee
+
+
+ Parser Grab (receipt GrabFood, GrabCar, GrabBike):
+
+Sender: noreply@grab.com, receipt@grab.com
+Extract: tipe layanan, nama resto/tujuan, total, tanggal
+Auto-kategori: GrabFood → Makanan & Minuman, GrabCar/GrabBike → Transportasi
+Anti-duplikat
+
+
+ Parser Gojek (receipt GoFood, GoRide, GoCar):
+
+Sender: noreply@gojek.com
+Extract: tipe layanan, nama resto/tujuan, total, tanggal
+Auto-kategori: GoFood → Makanan & Minuman, GoRide/GoCar → Transportasi
+Anti-duplikat
+
+
+ Parser Traveloka (booking confirmation):
+
+Sender: noreply@traveloka.com
+Extract: tipe booking (flight/hotel/activity), detail, total, tanggal
+Auto-kategori: → Hiburan atau Transportasi
+Anti-duplikat
+
+
+ Anti-duplikat logic (CRITICAL):
+
+Saat marketplace email masuk, cek apakah sudah ada transaksi dari BANK dengan:
+
+amount yang sama (atau selisih < Rp 5.000 untuk biaya admin)
+tanggal yang sama (±1 hari toleransi)
+akun yang sama
+
+
+Jika match: jangan buat transaksi baru, tapi ENRICH transaksi yang ada:
+
+Update description dengan nama produk/merchant detail
+Update kategori jika lebih spesifik
+Tandai source = "gmail_enriched"
+
+
+Jika tidak match: buat pending review baru seperti biasa
+
+
+ Marketplace source toggle di Gmail Settings:
+
+Tambahkan section "Marketplace" di bawah section "Bank"
+Toggle per marketplace: Shopee, Tokopedia, Grab, Gojek, Traveloka
+Default: semua ON
+
+
+ Smart category mapping:
+
+Buat mapping table keyword produk → kategori:
+
+"makanan|food|resto|makan" → Makanan & Minuman
+"elektronik|gadget|phone|laptop|charger" → Teknologi
+"baju|celana|sepatu|fashion|pakaian" → Fashion (kategori baru)
+"obat|vitamin|kesehatan" → Kesehatan
+"pulsa|internet|data" → Teknologi
+"hotel|flight|pesawat|tiket" → Hiburan/Travel
+
+
+Jika tidak match keyword → fallback ke "Belanja Online"
+
+
+
+API:
+
+Update POST /gmail/sync → include marketplace emails
+GET /gmail/sources → include marketplace sources
+PATCH /gmail/sources/:id/toggle → toggle marketplace sources
+
+Acceptance Criteria:
+
+Sync Gmail → email Shopee/Tokopedia/Grab/Gojek/Traveloka terdeteksi
+Transaksi dari marketplace muncul di pending review dengan kategori yang tepat
+Jika bank notif + marketplace notif untuk pembelian yang sama → tidak duplikat, tapi transaksi bank di-enrich dengan detail marketplace
+Toggle marketplace source on/off berfungsi
+Kategori auto-assign lebih akurat: "GrabFood - Warung Padang" bukan cuma "Pembayaran"
+
+---
 
 ## 7. ENVIRONMENT VARIABLES
 
