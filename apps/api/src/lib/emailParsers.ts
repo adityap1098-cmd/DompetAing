@@ -107,7 +107,10 @@ export const BANK_PATTERNS: BankPattern[] = [
   // ── BCA ──────────────────────────────────────
   {
     bankName: "BCA",
-    senderPatterns: ["notifikasi@bca.co.id", "no_reply@klikbca.com", "bca.co.id"],
+    senderPatterns: [
+      "bca.co.id",          // catch-all: notifikasi@, ebanking@, info@, noreply@, dst
+      "klikbca.com",        // catch-all: no_reply@klikbca.com, dst
+    ],
     subjectPatterns: ["bca", "klikbca"],
     parse(subject, body, date) {
       const amount = extractAmount(body) ?? extractAmount(subject);
@@ -373,9 +376,14 @@ export function detectBank(sender: string, subject: string): BankPattern | null 
 
 export function buildBankEmailQuery(afterDate: Date): string {
   const senders = [
-    // BCA
+    // BCA (semua variasi)
     "notifikasi@bca.co.id",
     "no_reply@klikbca.com",
+    "ebanking@bca.co.id",
+    "klikbca@bca.co.id",
+    "noreply@bca.co.id",
+    "info@bca.co.id",
+    "bca@bca.co.id",
     // Mandiri / Livin
     "noreply.livin@bankmandiri.co.id",
     "mc@bankmandiri.co.id",
@@ -386,9 +394,11 @@ export function buildBankEmailQuery(afterDate: Date): string {
     "no-reply@ovo.id",
     // BNI
     "notifikasi@bni.co.id",
+    "noreply@bni.co.id",
     // BRI
     "info@bri.co.id",
     "notifikasi@bri.co.id",
+    "noreply@bri.co.id",
     // DANA
     "noreply@dana.id",
     // ShopeePay
@@ -397,6 +407,22 @@ export function buildBankEmailQuery(afterDate: Date): string {
     "noreply@seabank.co.id",
     // Jago
     "noreply@jago.com",
+    // CIMB
+    "noreply@cimb.co.id",
+    "octo@cimbniaga.co.id",
+    // Permata / PermataME
+    "noreply@permatabank.com",
+    // Jenius / BTPN
+    "noreply@btpn.com",
+    "info@jenius.com",
+    // BTN
+    "noreply@btn.co.id",
+    // Maybank
+    "noreply@maybank.co.id",
+    // DBS / Digibank
+    "noreply@dbs.com",
+    // OCBC NISP
+    "noreply@ocbc.id",
   ];
 
   const fromClause = senders.map((s) => `from:${s}`).join(" OR ");
