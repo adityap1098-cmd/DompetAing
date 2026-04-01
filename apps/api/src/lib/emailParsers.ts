@@ -21,12 +21,63 @@ export interface BankPattern {
 // HELPERS
 // ─────────────────────────────────────────────
 
+// Month name → index mapping (Indonesian + English)
+const MONTH_ID: Record<string, number> = {
+  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4,
+  jun: 5, jul: 6, agu: 7, aug: 7, sep: 8,
+  okt: 9, oct: 9, nov: 10, des: 11, dec: 11,
+};
+
 // Parse numeric string with Indonesian format:
 // "178.404,00" → 178404  |  "1.000.000" → 1000000  |  "179404" → 179404
 function parseIdrAmount(numStr: string): number | null {
   const normalized = numStr.trim().replace(/\./g, "").replace(",", ".");
   const n = parseFloat(normalized);
   return !isNaN(n) && n > 0 ? Math.round(n) : null;
+}
+
+/** Parse BCA English-style amount: "IDR 164,800.00" → 164800 */
+function parseBcaEnglishAmount(numStr: string): number | null {
+  // English format: comma = thousands, dot = decimal → remove commas, parse float
+  const cleaned = numStr.trim().replace(/,/g, "");
+  const n = parseFloat(cleaned);
+  return !isNaN(n) && n > 0 ? Math.round(n) : null;
+}
+
+/** Extract amount from BCA email body (English format: IDR 164,800.00) */
+function extractBcaAmount(text: string): number | null {
+  const patterns = [
+    /total\s+payment\s*:\s*IDR\s*([\d.,]+)/i,
+    /total\s+transaksi?\s*:\s*IDR\s*([\d.,]+)/i,
+    /amount\s*:\s*IDR\s*([\d.,]+)/i,
+    /nominal\s*:\s*IDR\s*([\d.,]+)/i,
+    /IDR\s+([\d,]+\.\d{2})/i,       // "IDR 164,800.00" — must have .XX decimal
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m?.[1]) {
+      const n = parseBcaEnglishAmount(m[1]);
+      if (n) return n;
+    }
+  }
+  return null;
+}
+
+/** Parse BCA date: "Transaction Date: 24 Mar 2026 14:13:14" */
+function parseBcaDate(body: string, fallback: Date): Date {
+  const m = body.match(/transaction\s+date\s*:\s*(\d{1,2})\s+(\w{3,})\s+(\d{4})\s+(\d{2}:\d{2}:\d{2})/i);
+  if (!m) return parseBodyDate(body, fallback);
+
+  const day = parseInt(m[1], 10);
+  const monthKey = m[2].toLowerCase().slice(0, 3);
+  const year = parseInt(m[3], 10);
+  const monthNum = MONTH_ID[monthKey];
+  if (monthNum === undefined) return fallback;
+
+  const [h, mi, s] = m[4].split(":").map(Number);
+  // BCA times are WIB (UTC+7)
+  const d = new Date(Date.UTC(year, monthNum, day, h - 7, mi, s));
+  return d;
 }
 
 // Generic amount extraction — tries common Indonesian bank email patterns
@@ -50,11 +101,6 @@ function extractAmount(text: string): number | null {
 
 // Parse Indonesian date + time from email body.
 // Handles: "Tanggal: 28 Mar 2026" + "Jam: 10:04:21 WIB"
-const MONTH_ID: Record<string, number> = {
-  jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4,
-  jun: 5, jul: 6, agu: 7, aug: 7, sep: 8,
-  okt: 9, oct: 9, nov: 10, des: 11, dec: 11,
-};
 
 function parseBodyDate(body: string, fallback: Date): Date {
   const dateMatch = body.match(
@@ -113,18 +159,35 @@ export const BANK_PATTERNS: BankPattern[] = [
     ],
     subjectPatterns: ["bca", "klikbca"],
     parse(subject, body, date) {
-      const amount = extractAmount(body) ?? extractAmount(subject);
+      // Skip jika status bukan Successful
+      const statusMatch = body.match(/status\s*:\s*(\w+)/i);
+      if (statusMatch && statusMatch[1].toLowerCase() !== "successful") return null;
+
+      // BCA pakai English number format: "IDR 164,800.00" (koma = ribuan, titik = desimal)
+      const amount = extractBcaAmount(body) ?? extractAmount(body) ?? extractAmount(subject);
       if (!amount) return null;
 
-      const type = detectType(subject, body);
+      // Type: default expense. Income hanya jika keyword masuk/receive/credit
+      const txnTypeMatch = body.match(/transaction\s*type\s*:\s*([^\n\r]+)/i);
+      const txnType = txnTypeMatch?.[1]?.trim().toLowerCase() ?? "";
+      const incomeKeywords = ["transfer masuk", "receive", "credit", "terima", "refund", "pengembalian"];
+      const type: "expense" | "income" = incomeKeywords.some(k => txnType.includes(k) || body.toLowerCase().includes(k))
+        ? "income" : "expense";
+
+      // Merchant dari "Payment to:" atau "Transfer to:" atau pola Indonesia
       const merchant = extractFromPattern(body, [
-        /(?:tujuan|penerima|merchant|nama toko)\s*:\s*([^\n\r]+)/i,
+        /payment\s+to\s*:\s*([^\n\r]+)/i,
+        /transfer\s+to\s*:\s*([^\n\r]+)/i,
+        /paid\s+to\s*:\s*([^\n\r]+)/i,
+        /(?:tujuan|penerima|merchant)\s*:\s*([^\n\r]+)/i,
         /(?:kepada|ke)\s*:\s*([^\n\r]+)/i,
-        /(?:toko|di)\s*:\s*([^\n\r]+)/i,
       ]);
 
-      const description = merchant ? `BCA: ${merchant}` : (subject.trim() || "Transaksi BCA");
-      return { amount, type, description, merchant, date: parseBodyDate(body, date), bankName: "BCA", rawSubject: subject };
+      // Date dari "Transaction Date: 24 Mar 2026 14:13:14"
+      const bcaDate = parseBcaDate(body, date);
+
+      const description = merchant ? `BCA: ${merchant}` : (txnType ? `BCA: ${txnType}` : subject.trim() || "Transaksi BCA");
+      return { amount, type, description, merchant, date: bcaDate, bankName: "BCA", rawSubject: subject };
     },
   },
 
