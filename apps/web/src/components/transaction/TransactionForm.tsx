@@ -138,7 +138,7 @@ export function TransactionForm({
 
       {/* ── Amount ── */}
       <div className="py-5 bg-[#F0EEE9] dark:bg-[#242522] rounded-[14px] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]">
-        <AmountInput value={amount} onChange={setAmount} autoFocus={!transaction} />
+        <AmountInput value={amount} onChange={setAmount} />
       </div>
 
       {/* ── Akun + Tanggal (2 col) ── */}

@@ -111,7 +111,7 @@ export function BudgetForm({
       <div>
         <label className={labelClass}>Limit Budget</label>
         <div className="py-3 px-2 bg-[#F7F6F3] dark:bg-[#111210]/50 rounded-2xl">
-          <AmountInput value={amount} onChange={setAmount} autoFocus={!!budget} />
+          <AmountInput value={amount} onChange={setAmount} />
         </div>
       </div>
 
