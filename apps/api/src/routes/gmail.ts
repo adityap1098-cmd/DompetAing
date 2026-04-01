@@ -10,6 +10,7 @@ import { syncGmailForUser, getGmailStats, debugSyncForUser } from "../lib/gmailS
 import { env } from "../env.js";
 import { ok, fail } from "@dompetaing/shared";
 import { computeAccountBalance } from "../lib/computed.js";
+import { encryptToken, decryptToken } from "../lib/crypto.js";
 
 const gmail = new Hono();
 gmail.use("*", requireAuth);
@@ -63,8 +64,8 @@ gmail.get("/callback", async (c) => {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        access_token: tokens.accessToken(),
-        refresh_token: tokens.hasRefreshToken() ? tokens.refreshToken() : user.refresh_token,
+        access_token: encryptToken(tokens.accessToken()),
+        refresh_token: encryptToken(tokens.hasRefreshToken() ? tokens.refreshToken() : user.refresh_token),
         token_expiry: tokens.accessTokenExpiresAt(),
         gmail_connected: true,
       },
@@ -91,7 +92,8 @@ gmail.get("/status", async (c) => {
   let gmailEmail: string | null = null;
   if (user.gmail_connected && user.access_token) {
     try {
-      const profile = await fetchGmailProfile(user.access_token);
+      const token = decryptToken(user.access_token) ?? user.access_token;
+      const profile = await fetchGmailProfile(token);
       gmailEmail = profile.emailAddress;
     } catch {
       // token expired or revoked — mark disconnected

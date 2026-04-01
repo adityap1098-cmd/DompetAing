@@ -1,6 +1,7 @@
 // Gmail API utilities — token management + message fetching
 
 import { env } from "../env.js";
+import { decryptToken, encryptToken } from "./crypto.js";
 
 // ── Types ──
 
@@ -76,19 +77,23 @@ export async function getValidToken(user: {
   const bufferMs = 60 * 1000; // refresh 1 min early
   const now = Date.now();
 
+  // Decrypt tokens from DB
+  const accessToken = decryptToken(user.access_token);
+  const refreshToken = decryptToken(user.refresh_token);
+
   if (
-    user.access_token &&
+    accessToken &&
     user.token_expiry &&
     user.token_expiry.getTime() - bufferMs > now
   ) {
-    return { token: user.access_token, refreshed: null };
+    return { token: accessToken, refreshed: null };
   }
 
-  if (!user.refresh_token) {
+  if (!refreshToken) {
     throw new Error("No refresh token — user must reconnect Gmail.");
   }
 
-  const refreshed = await refreshGmailToken(user.refresh_token);
+  const refreshed = await refreshGmailToken(refreshToken);
   return { token: refreshed.access_token, refreshed };
 }
 

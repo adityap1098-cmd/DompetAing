@@ -14,6 +14,7 @@ import {
   suggestCategoryFromKeywords,
   type ParsedMarketplaceTransaction,
 } from "./marketplaceParsers.js";
+import { encryptToken } from "./crypto.js";
 
 export interface SyncResult {
   emails_processed: number;
@@ -247,7 +248,7 @@ export async function syncGmailForUser(userId: string, forceFullScan = false): P
     await prisma.user.update({
       where: { id: userId },
       data: {
-        access_token: refreshed.access_token,
+        access_token: encryptToken(refreshed.access_token),
         token_expiry: refreshed.token_expiry,
       },
     });
@@ -625,7 +626,7 @@ export async function debugSyncForUser(userId: string): Promise<DebugSyncResult>
   if (refreshed) {
     await prisma.user.update({
       where: { id: userId },
-      data: { access_token: refreshed.access_token, token_expiry: refreshed.token_expiry },
+      data: { access_token: encryptToken(refreshed.access_token), token_expiry: refreshed.token_expiry },
     });
   }
 

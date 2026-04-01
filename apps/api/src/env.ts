@@ -21,6 +21,7 @@ export const env = {
   NODE_ENV: optional("NODE_ENV", "development"),
   FRONTEND_URL: optional("FRONTEND_URL", "http://localhost:5173"),
   COOKIE_DOMAIN: optional("COOKIE_DOMAIN", ""),
+  ENCRYPTION_KEY: optional("ENCRYPTION_KEY", ""),
   // Midtrans
   MIDTRANS_SERVER_KEY: optional("MIDTRANS_SERVER_KEY", ""),
   MIDTRANS_CLIENT_KEY: optional("MIDTRANS_CLIENT_KEY", ""),

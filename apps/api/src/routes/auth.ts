@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { TRIAL_DAYS } from "@dompetaing/shared";
 import { seedUserCategories } from "../lib/seed.js";
 import { env } from "../env.js";
+import { encryptToken } from "../lib/crypto.js";
 
 const auth = new Hono();
 
@@ -82,8 +83,8 @@ auth.get("/google/callback", async (c) => {
           name: googleUser.name,
           avatar_url: googleUser.picture ?? null,
           google_id: googleUser.sub,
-          access_token: accessToken,
-          refresh_token: tokens.hasRefreshToken() ? tokens.refreshToken() : null,
+          access_token: encryptToken(accessToken),
+          refresh_token: encryptToken(tokens.hasRefreshToken() ? tokens.refreshToken() : null),
           token_expiry: tokens.accessTokenExpiresAt(),
         },
       });
@@ -108,8 +109,8 @@ auth.get("/google/callback", async (c) => {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          access_token: accessToken,
-          refresh_token: tokens.hasRefreshToken() ? tokens.refreshToken() : user.refresh_token,
+          access_token: encryptToken(accessToken),
+          refresh_token: encryptToken(tokens.hasRefreshToken() ? tokens.refreshToken() : user.refresh_token),
           token_expiry: tokens.accessTokenExpiresAt(),
           name: googleUser.name,
           avatar_url: googleUser.picture ?? user.avatar_url,
