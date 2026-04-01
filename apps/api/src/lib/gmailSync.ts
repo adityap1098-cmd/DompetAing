@@ -283,6 +283,7 @@ export async function syncGmailForUser(userId: string, forceFullScan = false): P
 
   // ── Phase 1: Fetch bank emails (same as before) ──
   const bankQuery = buildBankEmailQuery(afterDate);
+  console.log(`[GmailSync] User ${userId}: bank query = "${bankQuery}"`);
   const allBankMessages: { id: string }[] = [];
   let pageToken: string | undefined;
   let pages = 0;
@@ -293,6 +294,8 @@ export async function syncGmailForUser(userId: string, forceFullScan = false): P
     pageToken = r.nextPageToken;
     pages++;
   } while (pageToken && pages < 5);
+
+  console.log(`[GmailSync] User ${userId}: ${allBankMessages.length} bank emails found`);
 
   for (const msg of allBankMessages) {
     result.emails_processed++;
@@ -559,6 +562,180 @@ export async function syncGmailForUser(userId: string, forceFullScan = false): P
   });
 
   return result;
+}
+
+// ─────────────────────────────────────────────
+// DEBUG SYNC — scan only, no writes
+// ─────────────────────────────────────────────
+
+export interface DebugEmailInfo {
+  subject: string;
+  sender: string;
+  date: string;
+  matched: boolean;
+  match_type: "bank" | "marketplace" | null;
+  match_name: string | null;
+  parse_result: {
+    amount: number | null;
+    merchant: string | null;
+    type: string | null;
+  } | null;
+  skip_reason: string | null;
+}
+
+export interface DebugSyncResult {
+  total_emails_fetched: number;
+  bank_query: string;
+  broad_query: string;
+  bank_emails: DebugEmailInfo[];
+  broad_emails: DebugEmailInfo[];
+  banks_detected: string[];
+  total_matched: number;
+  total_unmatched: number;
+  user_tokens_ok: boolean;
+}
+
+export async function debugSyncForUser(userId: string): Promise<DebugSyncResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      access_token: true,
+      refresh_token: true,
+      token_expiry: true,
+      gmail_last_sync: true,
+    },
+  });
+
+  if (!user || !user.refresh_token) {
+    return {
+      total_emails_fetched: 0,
+      bank_query: "",
+      broad_query: "",
+      bank_emails: [],
+      broad_emails: [],
+      banks_detected: [],
+      total_matched: 0,
+      total_unmatched: 0,
+      user_tokens_ok: false,
+    };
+  }
+
+  const { token, refreshed } = await getValidToken(user);
+  if (refreshed) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { access_token: refreshed.access_token, token_expiry: refreshed.token_expiry },
+    });
+  }
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // ── 1. Standard bank query ──
+  const bankQuery = buildBankEmailQuery(thirtyDaysAgo);
+  const bankEmails: DebugEmailInfo[] = [];
+  const banksDetected = new Set<string>();
+  let totalMatched = 0;
+
+  try {
+    const bankResult = await searchGmailMessages(token, bankQuery, 20);
+    for (const msg of bankResult.messages) {
+      try {
+        const detail = await fetchGmailMessage(token, msg.id);
+        const { subject, body, date, sender } = extractEmailContent(detail);
+        const bank = detectBank(sender, subject);
+
+        if (bank) {
+          const parsed = bank.parse(subject, body, date);
+          banksDetected.add(bank.bankName);
+          totalMatched++;
+          bankEmails.push({
+            subject, sender, date: date.toISOString(),
+            matched: true, match_type: "bank", match_name: bank.bankName,
+            parse_result: parsed ? { amount: parsed.amount, merchant: parsed.merchant, type: parsed.type } : null,
+            skip_reason: parsed ? null : "parse_failed",
+          });
+        } else {
+          bankEmails.push({
+            subject, sender, date: date.toISOString(),
+            matched: false, match_type: null, match_name: null,
+            parse_result: null,
+            skip_reason: "no_bank_match",
+          });
+        }
+      } catch (e) {
+        bankEmails.push({
+          subject: `[fetch error: ${msg.id}]`, sender: "", date: "",
+          matched: false, match_type: null, match_name: null,
+          parse_result: null,
+          skip_reason: `fetch_error: ${e instanceof Error ? e.message : String(e)}`,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[DebugSync] Bank query failed:", e);
+  }
+
+  // ── 2. Broad keyword query (catch banks we don't have specific senders for) ──
+  const y = thirtyDaysAgo.getFullYear();
+  const mo = String(thirtyDaysAgo.getMonth() + 1).padStart(2, "0");
+  const d = String(thirtyDaysAgo.getDate()).padStart(2, "0");
+  const broadQuery = `(subject:(transaksi OR pembayaran OR transfer OR debit OR berhasil OR receipt OR "top up" OR tagihan)) after:${y}/${mo}/${d}`;
+
+  const broadEmails: DebugEmailInfo[] = [];
+
+  try {
+    const broadResult = await searchGmailMessages(token, broadQuery, 20);
+    for (const msg of broadResult.messages) {
+      try {
+        const detail = await fetchGmailMessage(token, msg.id);
+        const { subject, body, date, sender } = extractEmailContent(detail);
+        const bank = detectBank(sender, subject);
+        const marketplace = detectMarketplace(sender, subject);
+
+        if (bank) {
+          totalMatched++;
+          banksDetected.add(bank.bankName);
+          broadEmails.push({
+            subject, sender, date: date.toISOString(),
+            matched: true, match_type: "bank", match_name: bank.bankName,
+            parse_result: null, skip_reason: null,
+          });
+        } else if (marketplace) {
+          totalMatched++;
+          broadEmails.push({
+            subject, sender, date: date.toISOString(),
+            matched: true, match_type: "marketplace", match_name: marketplace.marketplaceName,
+            parse_result: null, skip_reason: null,
+          });
+        } else {
+          broadEmails.push({
+            subject, sender, date: date.toISOString(),
+            matched: false, match_type: null, match_name: null,
+            parse_result: null,
+            skip_reason: `unrecognized_sender: ${sender}`,
+          });
+        }
+      } catch {
+        // skip
+      }
+    }
+  } catch (e) {
+    console.error("[DebugSync] Broad query failed:", e);
+  }
+
+  return {
+    total_emails_fetched: bankEmails.length + broadEmails.length,
+    bank_query: bankQuery,
+    broad_query: broadQuery,
+    bank_emails: bankEmails,
+    broad_emails: broadEmails,
+    banks_detected: Array.from(banksDetected),
+    total_matched: totalMatched,
+    total_unmatched: (bankEmails.length + broadEmails.length) - totalMatched,
+    user_tokens_ok: true,
+  };
 }
 
 export async function getGmailStats(userId: string): Promise<{

@@ -6,7 +6,7 @@ import { requireFeature } from "../middleware/subscription.js";
 import { prisma } from "../lib/db.js";
 import { googleGmail, GMAIL_SCOPES, fetchGoogleUserInfo } from "../lib/google.js";
 import { fetchGmailProfile } from "../lib/gmail.js";
-import { syncGmailForUser, getGmailStats } from "../lib/gmailSync.js";
+import { syncGmailForUser, getGmailStats, debugSyncForUser } from "../lib/gmailSync.js";
 import { env } from "../env.js";
 import { ok, fail } from "@dompetaing/shared";
 import { computeAccountBalance } from "../lib/computed.js";
@@ -420,29 +420,17 @@ gmail.patch("/settings", async (c) => {
 // ── GET /gmail/debug-scan — scan first 20 emails, return raw sender+subject ──
 gmail.get("/debug-scan", async (c) => {
   const user = c.get("user");
-  if (!user.gmail_connected || !user.access_token) {
+  if (!user.gmail_connected) {
     return c.json(fail("Gmail not connected"), 400);
   }
-  const { getValidToken } = await import("../lib/gmail.js");
-  const { buildBankEmailQuery, detectBank } = await import("../lib/emailParsers.js");
-  const { fetchGmailMessage, extractEmailContent, searchGmailMessages } = await import("../lib/gmail.js");
 
-  const { token } = await getValidToken(user as Parameters<typeof getValidToken>[0]);
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-  const query = buildBankEmailQuery(sixMonthsAgo);
-
-  const { messages } = await searchGmailMessages(token, query, 20);
-  const results = [];
-  for (const msg of messages.slice(0, 20)) {
-    try {
-      const detail = await fetchGmailMessage(token, msg.id);
-      const { subject, sender } = extractEmailContent(detail);
-      const bank = detectBank(sender, subject);
-      results.push({ sender, subject, bank: bank?.bankName ?? "NO_MATCH" });
-    } catch { results.push({ id: msg.id, error: "fetch failed" }); }
+  try {
+    const result = await debugSyncForUser(user.id);
+    return c.json(ok(result));
+  } catch (e) {
+    console.error("[Gmail Debug] Error:", e);
+    return c.json(fail(e instanceof Error ? e.message : "Debug scan failed"), 500);
   }
-  return c.json(ok({ query, total_found: messages.length, samples: results }));
 });
 
 // ── POST /gmail/disconnect ──
