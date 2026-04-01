@@ -10,9 +10,9 @@ export const LoginCallbackSchema = z.object({
 export const CreateAccountSchema = z.object({
   name: z.string().min(1).max(100),
   type: z.enum(["bank", "ewallet", "cash"]),
-  bank_name: z.string().max(50).optional(),
-  account_type: z.string().max(50).optional(),
-  last_four: z.string().length(4).optional(),
+  bank_name: z.string().max(50).nullish(),
+  account_type: z.string().max(50).nullish(),
+  last_four: z.string().length(4).nullish(),
   initial_balance: z.number().default(0),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#2E7D5A"),
   icon: z.string().default("🏦"),
