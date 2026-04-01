@@ -80,7 +80,17 @@ settings.put("/preferences", async (c) => {
   };
 
   const VALID_THEMES = ["light", "dark"];
-  const VALID_SCHEMES = ["sage_green", "ocean_blue", "royal_purple", "sunset_orange", "teal_green", "hot_pink", "navy_blue", "steel_gray"];
+  const VALID_SCHEMES = [
+    // Solid (free)
+    "sage_green", "ocean_blue", "royal_purple", "sunset_orange",
+    "teal_green", "hot_pink", "navy_blue", "steel_gray",
+    // Extra solid
+    "gold", "rose_gold", "midnight_blue", "emerald",
+    "burgundy", "charcoal",
+    // Themed (premium)
+    "islamic_gold", "ocean_wave", "forest_nature",
+    "sakura_pink", "geometric_dark", "batik_heritage",
+  ];
   const VALID_CURRENCIES = ["IDR", "USD", "EUR", "SGD", "MYR"];
   const VALID_LOCALES = ["id", "en"];
 
