@@ -39,4 +39,15 @@ function applyTheme(theme: Theme) {
   } else {
     root.classList.remove("dark");
   }
+  // Re-apply color scheme to update pattern colors for dark/light mode
+  try {
+    const scheme = localStorage.getItem("da_scheme");
+    if (scheme) {
+      setTimeout(() => {
+        import("../hooks/useColorScheme").then(({ applyColorScheme }) => {
+          applyColorScheme(scheme);
+        });
+      }, 0);
+    }
+  } catch {}
 }

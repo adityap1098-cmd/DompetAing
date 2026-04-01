@@ -35,6 +35,25 @@
     min-height: 100dvh;
     overflow-x: hidden;
   }
+
+  /* Background pattern overlay (themed schemes) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image: var(--bg-pattern, none);
+    background-repeat: repeat;
+    opacity: var(--bg-pattern-opacity, 0);
+    pointer-events: none;
+  }
+
+  /* Ensure content is above pattern */
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Dark mode background handled by Tailwind dark: prefix in AppShell */
 }
 

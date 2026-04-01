@@ -25,6 +25,15 @@ const COLOR_SCHEMES = [
   { id: "steel_gray",    label: "Steel Gray",    color: "#475569" },
 ];
 
+const THEMED_SCHEME_LIST = [
+  { id: "islamic_gold",   label: "Islamic Gold",    color: "#B8860B", emoji: "🕌" },
+  { id: "ocean_wave",     label: "Ocean Wave",      color: "#0077B6", emoji: "🌊" },
+  { id: "forest_nature",  label: "Forest Nature",   color: "#2D6A4F", emoji: "🌿" },
+  { id: "sakura_pink",    label: "Sakura Pink",     color: "#C77D8A", emoji: "🌸" },
+  { id: "geometric_dark", label: "Geometric",       color: "#6C63FF", emoji: "⬡" },
+  { id: "batik_heritage", label: "Batik Heritage",  color: "#8B4513", emoji: "🪭" },
+];
+
 // ── PIN Modal ──
 function PinModal({
   pinSet,
@@ -316,8 +325,47 @@ export function SettingsPage() {
                 ))}
               </div>
               <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-1.5">
-                {COLOR_SCHEMES.find((s) => s.id === user.color_scheme)?.label ?? "Sage Green"}
+                {COLOR_SCHEMES.find((s) => s.id === user.color_scheme)?.label
+                  ?? THEMED_SCHEME_LIST.find((s) => s.id === user.color_scheme)?.label
+                  ?? "Sage Green"}
               </p>
+
+              {/* Themed schemes (premium only) */}
+              <p className="text-[12px] text-[#1A1917] dark:text-[#F0EEE9] mt-4 mb-2">
+                ✨ Tema Spesial
+                <span className="text-[9px] text-[#9E9B98] dark:text-[#4A4948] ml-1.5">Premium</span>
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {THEMED_SCHEME_LIST.map((theme) => {
+                  const isActive = user.color_scheme === theme.id;
+                  const canUse = plan !== "free";
+                  return (
+                    <button
+                      key={theme.id}
+                      onClick={() => canUse && handleColorScheme(theme.id)}
+                      className={[
+                        "relative flex flex-col items-center gap-1 p-2 rounded-[10px] border-[2px] transition-all",
+                        isActive
+                          ? "border-[#1A1917] dark:border-[#F0EEE9]"
+                          : "border-transparent",
+                        canUse
+                          ? "hover:bg-[#F0EEE9] dark:hover:bg-[#242522]"
+                          : "opacity-60",
+                      ].join(" ")}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-[8px] flex items-center justify-center text-lg"
+                        style={{ backgroundColor: `${theme.color}18`, border: `1.5px solid ${theme.color}40` }}
+                      >
+                        {canUse ? theme.emoji : "🔒"}
+                      </div>
+                      <span className="text-[8px] font-medium text-[#6B6864] dark:text-[#9E9B96] leading-tight text-center">
+                        {theme.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
