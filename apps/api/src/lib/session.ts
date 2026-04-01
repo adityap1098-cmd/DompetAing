@@ -35,14 +35,18 @@ export async function getSession(c: Context): Promise<Session> {
       await setSignedCookie(c, "dompetaing_session", encoded, secret, {
         httpOnly: true,
         secure: env.NODE_ENV === "production",
-        sameSite: "Lax",
+        sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: "/",
+        ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
       });
     },
     destroy() {
       session.userId = "";
-      deleteCookie(c, "dompetaing_session", { path: "/" });
+      deleteCookie(c, "dompetaing_session", {
+        path: "/",
+        ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
+      });
     },
   };
 

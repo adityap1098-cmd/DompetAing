@@ -20,6 +20,7 @@ export const env = {
   PORT: parseInt(optional("PORT", "3001"), 10),
   NODE_ENV: optional("NODE_ENV", "development"),
   FRONTEND_URL: optional("FRONTEND_URL", "http://localhost:5173"),
+  COOKIE_DOMAIN: optional("COOKIE_DOMAIN", ""),
   // Midtrans
   MIDTRANS_SERVER_KEY: optional("MIDTRANS_SERVER_KEY", ""),
   MIDTRANS_CLIENT_KEY: optional("MIDTRANS_CLIENT_KEY", ""),

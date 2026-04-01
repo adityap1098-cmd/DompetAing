@@ -22,16 +22,18 @@ auth.get("/google", async (c) => {
   setCookie(c, "oauth_state", state, {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
-    sameSite: "Lax",
+    sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
     maxAge: 60 * 10, // 10 minutes
     path: "/",
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   });
   setCookie(c, "oauth_code_verifier", codeVerifier, {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
-    sameSite: "Lax",
+    sameSite: env.NODE_ENV === "production" ? "None" : "Lax",
     maxAge: 60 * 10,
     path: "/",
+    ...(env.COOKIE_DOMAIN ? { domain: env.COOKIE_DOMAIN } : {}),
   });
 
   return c.redirect(url.toString());
