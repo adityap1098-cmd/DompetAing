@@ -10,8 +10,9 @@ reports.use("*", requireAuth);
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
 function monthRange(month: number, year: number) {
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0, 23, 59, 59, 999);
+  // Offset ke WIB (UTC+7): 1 April 00:00 WIB = 31 Maret 17:00 UTC
+  const start = new Date(Date.UTC(year, month - 1, 1) - 7 * 60 * 60 * 1000);
+  const end = new Date(Date.UTC(year, month, 1) - 7 * 60 * 60 * 1000 - 1);
   return { start, end };
 }
 

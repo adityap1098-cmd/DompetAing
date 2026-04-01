@@ -70,7 +70,7 @@ export function DashboardPage() {
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
   const monthStart = `${year}-${String(month).padStart(2, "0")}-01`;
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const lastDay = new Date(year, month, 0).getDate();
   const monthEnd = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
 
   const { data: incomeData } = useTransactions({ type: "income", date_from: monthStart, date_to: monthEnd, limit: 100 });

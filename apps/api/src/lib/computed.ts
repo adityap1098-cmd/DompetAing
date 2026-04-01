@@ -84,8 +84,9 @@ export function getBudgetPeriodDates(
   const year = periodYear ?? now.getFullYear();
 
   if (periodType === "monthly") {
-    const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
-    const end = new Date(year, month, 0, 23, 59, 59, 999);
+    // Offset ke WIB (UTC+7): 1 April 00:00 WIB = 31 Maret 17:00 UTC
+    const start = new Date(Date.UTC(year, month - 1, 1) - 7 * 60 * 60 * 1000);
+    const end = new Date(Date.UTC(year, month, 1) - 7 * 60 * 60 * 1000 - 1);
     return { start, end };
   }
 
@@ -101,8 +102,8 @@ export function getBudgetPeriodDates(
     return { start, end };
   }
 
-  // Fallback: current month
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  // Fallback: current month (WIB offset)
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1) - 7 * 60 * 60 * 1000);
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 7 * 60 * 60 * 1000 - 1);
   return { start, end };
 }

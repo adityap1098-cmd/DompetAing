@@ -115,8 +115,10 @@ function buildWhere(
   }
 
   const dateFilter: Record<string, unknown> = {};
-  if (params.date_from) dateFilter.gte = new Date(params.date_from);
-  if (params.date_to) dateFilter.lte = new Date(params.date_to + "T23:59:59.999Z");
+  // Offset date_from ke UTC-7 (WIB) supaya match tanggal lokal user
+  // "2026-04-01" berarti "1 April 00:00 WIB" = "31 Maret 17:00 UTC"
+  if (params.date_from) dateFilter.gte = new Date(params.date_from + "T00:00:00+07:00");
+  if (params.date_to) dateFilter.lte = new Date(params.date_to + "T23:59:59.999+07:00");
   if (Object.keys(dateFilter).length) and.push({ date: dateFilter });
 
   const amountFilter: Record<string, unknown> = {};
