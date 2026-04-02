@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { EmptyState } from "@/components/ui/EmptyState";
 import {
@@ -14,9 +15,22 @@ const TYPE_ICON: Record<string, string> = {
   debt_reminder: "⏰",
   weekly_report: "📊",
   transaction: "💳",
+  gmail_sync: "📧",
+  recurring: "🔁",
+};
+
+// Fallback routes per notification type (used if meta.url is missing)
+const TYPE_ROUTE: Record<string, string> = {
+  budget_alert: "/budget",
+  debt_reminder: "/debts",
+  weekly_report: "/reports",
+  transaction: "/transactions",
+  gmail_sync: "/gmail-sync",
+  recurring: "/transactions",
 };
 
 export function NotificationsPage() {
+  const navigate = useNavigate();
   const { data, isLoading } = useNotifications();
   const { mutate: markRead } = useMarkRead();
   const { mutate: markAllRead, isPending: markingAll } = useMarkAllRead();
@@ -100,7 +114,14 @@ export function NotificationsPage() {
               <button
                 type="button"
                 key={item.id}
-                onClick={() => !item.is_read && markRead(item.id)}
+                onClick={() => {
+                  // Mark as read
+                  if (!item.is_read) markRead(item.id);
+                  // Navigate to the relevant page
+                  const meta = item.meta ? (typeof item.meta === "string" ? JSON.parse(item.meta) : item.meta) : {};
+                  const url = meta.url || TYPE_ROUTE[item.type] || "/notifications";
+                  navigate(url);
+                }}
                 className={[
                   "w-full flex gap-3 px-4 py-3 text-left transition-colors",
                   idx < items.length - 1 ? "border-b border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]" : "",

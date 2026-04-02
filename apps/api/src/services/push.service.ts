@@ -56,7 +56,7 @@ export async function sendPush(payload: PushPayload): Promise<void> {
       type,
       title,
       body,
-      meta: JSON.stringify({ ref_id: refId ?? "", ...(meta ?? {}) }),
+      meta: JSON.stringify({ ref_id: refId ?? "", url: data?.url ?? "", ...(meta ?? {}) }),
     },
   });
 
