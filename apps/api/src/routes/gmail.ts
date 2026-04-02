@@ -5,7 +5,7 @@ import { requireAuth } from "../middleware/auth.js";
 import { requireFeature } from "../middleware/subscription.js";
 import { prisma } from "../lib/db.js";
 import { googleGmail, GMAIL_SCOPES, fetchGoogleUserInfo } from "../lib/google.js";
-import { fetchGmailProfile } from "../lib/gmail.js";
+import { fetchGmailProfile, getValidToken } from "../lib/gmail.js";
 import { syncGmailForUser, getGmailStats, debugSyncForUser } from "../lib/gmailSync.js";
 import { pushGmailSync } from "../services/push.service.js";
 import { env } from "../env.js";
@@ -93,11 +93,21 @@ gmail.get("/status", async (c) => {
   let gmailEmail: string | null = null;
   if (user.gmail_connected && user.access_token) {
     try {
-      const token = decryptToken(user.access_token) ?? user.access_token;
+      // Use getValidToken to auto-refresh expired access tokens
+      const { token, refreshed } = await getValidToken(user);
+      if (refreshed) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            access_token: encryptToken(refreshed.access_token),
+            token_expiry: refreshed.token_expiry,
+          },
+        });
+      }
       const profile = await fetchGmailProfile(token);
       gmailEmail = profile.emailAddress;
     } catch {
-      // token expired or revoked — mark disconnected
+      // refresh_token also invalid — user must reconnect
       await prisma.user.update({
         where: { id: user.id },
         data: { gmail_connected: false },
