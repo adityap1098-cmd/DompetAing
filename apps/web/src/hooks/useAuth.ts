@@ -7,7 +7,7 @@ import type { User } from "@dompetaing/shared";
 export function useAuth() {
   const queryClient = useQueryClient();
 
-  const { data: user, isLoading, error } = useQuery<User>({
+  const { data: user, isLoading, error, isFetched, dataUpdatedAt } = useQuery<User>({
     queryKey: ["auth", "me"],
     queryFn: () => api.get<User>("/auth/me"),
     retry: (failureCount, err) => {
@@ -36,6 +36,8 @@ export function useAuth() {
     isLoading,
     isAuthenticated: !!user,
     isUnauthenticated: !isLoading && (!user || (error instanceof ApiError && error.status === 401)),
+    // isFetched is true after at least one successful queryFn execution (not from persisted cache alone)
+    isFetched,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };

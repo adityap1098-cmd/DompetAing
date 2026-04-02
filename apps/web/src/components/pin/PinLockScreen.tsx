@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { PinDots } from "./PinDots";
 import { PinNumpad } from "./PinNumpad";
 import { useSecurityAction } from "@/hooks/useSettings";
+import { logout } from "@/lib/auth";
+import { clearOfflineData } from "@/lib/offline";
 
 const PIN_LENGTH = 4;
 const MAX_ATTEMPTS = 3;
@@ -67,7 +69,14 @@ export function PinLockScreen({ onUnlock }: PinLockScreenProps) {
         onSuccess: () => {
           onUnlock();
         },
-        onError: () => {
+        onError: (err) => {
+          // If server says "No PIN set", PIN was removed — unlock immediately
+          const errMsg = err instanceof Error ? err.message : "";
+          if (errMsg.includes("No PIN set")) {
+            onUnlock();
+            return;
+          }
+
           const newAttempts = attempts + 1;
           setAttempts(newAttempts);
           setPin("");
@@ -104,8 +113,10 @@ export function PinLockScreen({ onUnlock }: PinLockScreenProps) {
     setPin((p) => p.slice(0, -1));
   }, [isLockedOut]);
 
-  const handleForgotPin = useCallback(() => {
-    // Redirect to login for re-authentication
+  const handleForgotPin = useCallback(async () => {
+    // Clear offline cache (which may have stale pin_set=true) and logout
+    await clearOfflineData().catch(() => {});
+    await logout().catch(() => {});
     window.location.href = "/login";
   }, []);
 

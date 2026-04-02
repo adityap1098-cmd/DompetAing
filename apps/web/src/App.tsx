@@ -64,10 +64,12 @@ const persister = createIDBPersister();
 // ── PIN Lock Screen ──
 // Memory-only flag: resets on every page load/refresh → always locked on restart
 let pinUnlockedThisSession = false;
+// Track if we've confirmed pin_set from fresh API data this page load
+let pinStatusConfirmed = false;
 
 // ── Protected Route Guard ──
 function ProtectedLayout() {
-  const { isLoading, isAuthenticated, isUnauthenticated, user } = useAuth();
+  const { isLoading, isAuthenticated, isUnauthenticated, user, isFetched } = useAuth();
   useColorScheme();
 
   const [pinUnlocked, setPinUnlocked] = useState(() => pinUnlockedThisSession);
@@ -77,8 +79,19 @@ function ProtectedLayout() {
     initNetworkListeners();
   }, []);
 
-  // When user data loads, check if PIN lock should show
-  const pinRequired = !isLoading && isAuthenticated && user?.pin_set && !pinUnlocked;
+  // Mark pin status as confirmed once we get fresh data from API
+  // isFetched becomes true after queryFn runs (not just cache restore)
+  useEffect(() => {
+    if (isFetched && user) {
+      pinStatusConfirmed = true;
+    }
+  }, [isFetched, user]);
+
+  // PIN lock logic:
+  // - When online: wait for fresh API data (pinStatusConfirmed) before showing lock
+  // - When offline: use cached data immediately (can't verify with server)
+  const hasFreshPinStatus = pinStatusConfirmed || !navigator.onLine;
+  const pinRequired = !isLoading && isAuthenticated && hasFreshPinStatus && user?.pin_set === true && !pinUnlocked;
 
   if (isLoading) {
     return (

@@ -53,7 +53,12 @@ export function useUpdateNotifications() {
 }
 
 export function useSecurityAction() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: SecurityPayload) => api.put("/settings/security", data),
+    onSuccess: () => {
+      // Invalidate auth cache so pin_set reflects the new state
+      void queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
   });
 }
