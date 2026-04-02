@@ -90,10 +90,10 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
   };
 
   return (
-    <form onSubmit={handleSubmit} className="px-4 pb-6 pt-2 space-y-5">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[10px] px-[18px] pt-2 pb-[18px]">
       {/* Name */}
       <div>
-        <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+        <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
           Nama Akun <span className="text-red-500">*</span>
         </label>
         <input
@@ -102,7 +102,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
           onChange={(e) => setName(e.target.value)}
           placeholder="Contoh: BCA Tabungan"
           className={[
-            "w-full px-3 py-2.5 rounded-[12px] border text-[12px] bg-[#F7F6F3] dark:bg-[#111210]",
+            "w-full px-3 py-2.5 rounded-[10px] border text-[12px] bg-[#F7F6F3] dark:bg-[#111210]",
             "text-[#1A1917] dark:text-[#F0EEE9] placeholder-[#9E9B98] dark:placeholder-[#4A4948]",
             "focus:outline-none focus:ring-2 focus:ring-accent-500 dark:focus:ring-accent-dark",
             errors.name
@@ -117,7 +117,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
 
       {/* Type */}
       <div>
-        <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+        <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
           Tipe Akun <span className="text-red-500">*</span>
         </label>
         <div className="grid grid-cols-3 gap-2">
@@ -143,7 +143,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
       {/* Bank Name (conditional) */}
       {type === "bank" && (
         <div>
-          <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+          <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
             Nama Bank <span className="text-red-500">*</span>
           </label>
           <input
@@ -152,7 +152,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
             onChange={(e) => setBankName(e.target.value)}
             placeholder="Contoh: BCA, Mandiri, BNI"
             className={[
-              "w-full px-3 py-2.5 rounded-[12px] border text-[12px] bg-[#F7F6F3] dark:bg-[#111210]",
+              "w-full px-3 py-2.5 rounded-[10px] border text-[12px] bg-[#F7F6F3] dark:bg-[#111210]",
               "text-[#1A1917] dark:text-[#F0EEE9] placeholder-[#9E9B98] dark:placeholder-[#4A4948]",
               "focus:outline-none focus:ring-2 focus:ring-accent-500 dark:focus:ring-accent-dark",
               errors.bank_name
@@ -168,7 +168,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
 
       {/* Initial Balance */}
       <div>
-        <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+        <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
           Saldo Awal
         </label>
         <div className="relative">
@@ -181,14 +181,14 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
             value={balanceDisplay}
             onChange={handleBalanceChange}
             placeholder="0"
-            className="w-full pl-9 pr-3 py-2.5 rounded-[12px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] text-[12px] bg-[#F7F6F3] dark:bg-[#111210] text-[#1A1917] dark:text-[#F0EEE9] placeholder-[#9E9B98] dark:placeholder-[#4A4948] focus:outline-none focus:ring-2 focus:ring-accent-500 dark:focus:ring-accent-dark"
+            className="w-full pl-9 pr-3 py-2.5 rounded-[10px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] text-[12px] bg-[#F7F6F3] dark:bg-[#111210] text-[#1A1917] dark:text-[#F0EEE9] placeholder-[#9E9B98] dark:placeholder-[#4A4948] focus:outline-none focus:ring-2 focus:ring-accent-500 dark:focus:ring-accent-dark"
           />
         </div>
       </div>
 
       {/* Color Picker */}
       <div>
-        <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+        <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
           Warna
         </label>
         <div className="flex gap-2 flex-wrap">
@@ -210,7 +210,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
 
       {/* Icon Picker */}
       <div>
-        <label className="block text-[10px] font-semibold text-[#1A1917] dark:text-[#F0EEE9] mb-1.5">
+        <label className="block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1.5">
           Ikon
         </label>
         <div className="grid grid-cols-5 gap-2">

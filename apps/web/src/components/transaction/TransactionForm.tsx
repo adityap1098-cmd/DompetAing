@@ -114,17 +114,17 @@ export function TransactionForm({
       : "bg-[var(--accent)]";
 
   const fieldBtn = [
-    "flex items-center gap-3 w-full px-3.5 py-3 rounded-[12px] text-left",
+    "flex items-center gap-3 w-full px-[14px] py-[10px] rounded-[10px] text-left",
     "bg-[#F0EEE9] dark:bg-[#242522]",
     "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
     "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
     "active:bg-[#DDDBD6] dark:active:bg-[#333432]",
   ].join(" ");
 
-  const label = "block text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] mb-1.5 uppercase tracking-[0.06em]";
+  const label = "block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1";
 
   const inputField = [
-    "w-full px-3.5 py-3 rounded-[12px] text-[13px]",
+    "w-full px-[14px] py-[10px] rounded-[10px] text-[13px]",
     "bg-[#F0EEE9] dark:bg-[#242522]",
     "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
     "text-[#1A1917] dark:text-[#F0EEE9]",
@@ -136,9 +136,9 @@ export function TransactionForm({
   // ── STEP 1: Amount with numpad ──
   if (step === 1) {
     return (
-      <div className="flex flex-col px-4 pt-2 pb-4">
+      <div className="flex flex-col px-[18px] pt-2 pb-[18px]">
         {/* Type tabs */}
-        <div className="flex rounded-[12px] overflow-hidden bg-[#F0EEE9] dark:bg-[#242522] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] mb-4">
+        <div className="flex rounded-[10px] overflow-hidden bg-[#F0EEE9] dark:bg-[#242522] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] mb-4">
           {TYPES.map((t) => (
             <button
               key={t.value}
@@ -170,13 +170,13 @@ export function TransactionForm({
 
   // ── STEP 2: Details ──
   return (
-    <div className="flex flex-col gap-3.5 px-4 pt-2 pb-4">
+    <div className="flex flex-col gap-[10px] px-[18px] pt-2 pb-[18px]">
       {/* Amount summary — tap to go back */}
       <button
         type="button"
         onClick={() => setStep(1)}
         className={[
-          "flex items-center justify-between py-3 px-4 rounded-[14px]",
+          "flex items-center justify-between py-3 px-4 rounded-[10px]",
           "bg-[#F0EEE9] dark:bg-[#242522]",
           "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
           "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
@@ -344,7 +344,7 @@ export function TransactionForm({
           onClick={onCancel}
           disabled={loading}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold",
             "bg-[#F0EEE9] dark:bg-[#242522] text-[#1A1917] dark:text-[#F0EEE9]",
             "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
             "active:scale-95 disabled:opacity-50",
@@ -357,7 +357,7 @@ export function TransactionForm({
           onClick={handleSubmit}
           disabled={loading || !accountId || (type === "transfer" && !toAccountId)}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold text-white",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold text-white",
             "transition-all active:scale-95",
             "disabled:opacity-50 disabled:cursor-not-allowed",
           ].join(" ")}

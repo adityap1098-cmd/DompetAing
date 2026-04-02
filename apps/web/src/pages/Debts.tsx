@@ -233,17 +233,6 @@ export function DebtsPage() {
         </div>
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-20 right-4 w-[50px] h-[50px] bg-accent-500 dark:bg-accent-dark text-white rounded-full shadow-[0_4px_14px_rgba(46,125,90,0.38)] flex items-center justify-center active:scale-95 transition-transform z-40"
-        aria-label="Tambah hutang/piutang"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" className="w-5 h-5">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-
       {/* Add Modal */}
       <Modal
         isOpen={showAddModal}

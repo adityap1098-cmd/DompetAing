@@ -98,11 +98,6 @@ export function AccountsPage() {
     <div className="flex flex-col">
       <Header
         title="Akun"
-        right={
-          <div className="w-7 h-7 flex items-center justify-center rounded-[8px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] bg-white dark:bg-[#1C1D1A] text-[#6B6864] dark:text-[#9E9B96] text-base font-bold cursor-pointer" onClick={handleAdd}>
-            +
-          </div>
-        }
       />
 
       <div className="pt-4 pb-24">
@@ -145,20 +140,6 @@ export function AccountsPage() {
           </div>
         )}
       </div>
-
-      {/* FAB */}
-      {!atFreeLimit && (
-        <button
-          type="button"
-          onClick={handleAdd}
-          aria-label="Tambah akun"
-          className="fixed bottom-20 right-4 z-40 w-[50px] h-[50px] rounded-full bg-accent-500 dark:bg-accent-dark text-white shadow-[0_4px_14px_rgba(46,125,90,0.38)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" className="w-5 h-5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-        </button>
-      )}
 
       {/* Add Account Modal */}
       <Modal

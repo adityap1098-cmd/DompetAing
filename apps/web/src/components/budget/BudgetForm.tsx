@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AmountNumpad } from "@/components/ui/AmountNumpad";
 import { CategoryPicker } from "@/components/ui/CategoryPicker";
 import { useCategories } from "@/hooks/useCategories";
 import type { Budget } from "@dompetaing/shared";
@@ -18,6 +17,12 @@ const MONTH_NAMES = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
+
+function formatAmountDisplay(raw: string): string {
+  const n = raw.replace(/\D/g, "");
+  if (!n) return "";
+  return Number(n).toLocaleString("id-ID");
+}
 
 export function BudgetForm({
   budget,
@@ -44,26 +49,37 @@ export function BudgetForm({
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
 
-  function handleSubmit() {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) return;
     if (!categoryId) return;
     onSubmit({ category_id: categoryId, amount: numAmount });
   }
 
-  const label = "block text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] mb-1.5 uppercase tracking-[0.06em]";
+  const label = "block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1";
 
   const fieldBtn = [
-    "flex items-center gap-3 w-full px-3.5 py-3 rounded-[12px] text-left",
+    "flex items-center gap-3 w-full px-[14px] py-[10px] rounded-[10px] text-left",
     "bg-[#F0EEE9] dark:bg-[#242522]",
     "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
     "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
   ].join(" ");
 
+  const inputField = [
+    "w-full px-[14px] py-[10px] rounded-[10px] text-[13px]",
+    "bg-[#F0EEE9] dark:bg-[#242522]",
+    "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
+    "text-[#1A1917] dark:text-[#F0EEE9]",
+    "placeholder:text-[#9E9B98] dark:placeholder:text-[#4A4948]",
+    "focus:outline-none focus:border-[var(--accent)]",
+    "transition-colors",
+  ].join(" ");
+
   return (
-    <div className="flex flex-col gap-3.5 px-4 pt-2 pb-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[10px] px-[18px] pt-2 pb-[18px]">
       {/* Period info */}
-      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-[12px]"
+      <div className="flex items-center gap-2 px-[14px] py-[10px] rounded-[10px]"
         style={{ backgroundColor: "color-mix(in srgb, var(--accent) 10%, transparent)" }}
       >
         <span className="text-[14px]">📅</span>
@@ -119,20 +135,33 @@ export function BudgetForm({
         </div>
       )}
 
-      {/* Amount with numpad */}
+      {/* Amount — native keyboard */}
       <div>
         <label className={label}>Limit Budget</label>
-        <AmountNumpad value={amount} onChange={setAmount} />
+        <div className="relative">
+          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[13px] font-mono text-[#9E9B98] dark:text-[#4A4948]">
+            Rp
+          </span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={formatAmountDisplay(amount)}
+            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+            placeholder="0"
+            className={inputField + " pl-10 font-mono font-semibold"}
+            autoFocus
+          />
+        </div>
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2.5 pt-1">
+      <div className="flex gap-2.5 pt-[8px]">
         <button
           type="button"
           onClick={onCancel}
           disabled={loading}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold",
             "bg-[#F0EEE9] dark:bg-[#242522] text-[#1A1917] dark:text-[#F0EEE9]",
             "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
             "active:scale-95 disabled:opacity-50",
@@ -141,11 +170,10 @@ export function BudgetForm({
           Batal
         </button>
         <button
-          type="button"
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading || !categoryId || !amount || Number(amount) <= 0}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold text-white",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold text-white",
             "transition-all active:scale-95",
             "disabled:opacity-50 disabled:cursor-not-allowed",
           ].join(" ")}
@@ -168,6 +196,6 @@ export function BudgetForm({
         onSelect={(catId) => setCategoryId(catId)}
         allowNone={false}
       />
-    </div>
+    </form>
   );
 }

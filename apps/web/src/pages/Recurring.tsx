@@ -144,18 +144,6 @@ export function RecurringPage() {
         </div>
       </div>
 
-      {/* FAB */}
-      <button
-        type="button"
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-20 right-4 z-40 w-[50px] h-[50px] rounded-full bg-accent-500 dark:bg-accent-dark text-white shadow-[0_4px_14px_rgba(46,125,90,0.38)] hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
-        aria-label="Tambah transaksi berulang"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" className="w-5 h-5">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-
       {/* Add Modal */}
       <Modal
         isOpen={showAddModal}

@@ -73,7 +73,7 @@ export function CategoryPicker({
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Cari kategori..."
               className={[
-                "w-full pl-9 pr-3 py-2.5 rounded-[12px] text-[13px]",
+                "w-full pl-9 pr-3 py-2.5 rounded-[10px] text-[13px]",
                 "bg-[#F0EEE9] dark:bg-[#242522]",
                 "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
                 "text-[#1A1917] dark:text-[#F0EEE9]",

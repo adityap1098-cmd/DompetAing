@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { AmountNumpad } from "@/components/ui/AmountNumpad";
 import type { Debt } from "@dompetaing/shared";
 
 interface DebtFormProps {
@@ -18,10 +17,13 @@ interface DebtFormProps {
   loading?: boolean;
 }
 
-export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
-  // Step 1: amount, Step 2: details
-  const [step, setStep] = useState<1 | 2>(debt ? 2 : 1);
+function formatAmountDisplay(raw: string): string {
+  const n = raw.replace(/\D/g, "");
+  if (!n) return "";
+  return Number(n).toLocaleString("id-ID");
+}
 
+export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
   const [type, setType] = useState<"hutang" | "piutang">(debt?.type ?? "hutang");
   const [personName, setPersonName] = useState(debt?.person_name ?? "");
   const [amount, setAmount] = useState(debt ? String(Math.round(debt.amount)) : "");
@@ -35,7 +37,8 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
 
   const isEdit = !!debt;
 
-  function handleSubmit() {
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0 || !personName.trim() || !borrowDate) return;
 
@@ -51,10 +54,10 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
     });
   }
 
-  const label = "block text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] mb-1.5 uppercase tracking-[0.06em]";
+  const label = "block text-[11px] font-medium text-[#6B6864] dark:text-[#9E9B96] mb-1";
 
   const inputField = [
-    "w-full px-3.5 py-3 rounded-[12px] text-[13px]",
+    "w-full px-[14px] py-[10px] rounded-[10px] text-[13px]",
     "bg-[#F0EEE9] dark:bg-[#242522]",
     "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
     "text-[#1A1917] dark:text-[#F0EEE9]",
@@ -64,85 +67,40 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
   ].join(" ");
 
   const toggleRow = [
-    "flex items-center justify-between py-3 px-3.5 rounded-[12px]",
+    "flex items-center justify-between py-[10px] px-[14px] rounded-[10px]",
     "bg-[#F0EEE9] dark:bg-[#242522]",
     "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
   ].join(" ");
 
-  // ── STEP 1: Type + Amount ──
-  if (step === 1) {
-    return (
-      <div className="flex flex-col px-4 pt-2 pb-4">
-        {/* Type selector */}
-        <div className="flex rounded-[12px] overflow-hidden bg-[#F0EEE9] dark:bg-[#242522] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)] mb-4">
-          {(["hutang", "piutang"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setType(t)}
-              className={[
-                "flex-1 py-2.5 text-[12px] font-bold transition-all duration-150",
-                type === t
-                  ? t === "hutang"
-                    ? "bg-[#C94A1C] dark:bg-[#E87340] text-white rounded-[10px] mx-0.5 my-0.5"
-                    : "bg-[#1E8A5A] dark:bg-[#4CAF7A] text-white rounded-[10px] mx-0.5 my-0.5"
-                  : "text-[#9E9B98] dark:text-[#4A4948]",
-              ].join(" ")}
-            >
-              {t === "hutang" ? "🔴 Hutang" : "🟢 Piutang"}
-            </button>
-          ))}
-        </div>
-
-        <p className="text-[11px] text-center text-[#9E9B98] dark:text-[#4A4948] mb-3">
-          {type === "hutang" ? "Gua pinjam uang dari orang lain" : "Orang lain pinjam uang dari gua"}
-        </p>
-
-        {/* Custom numpad */}
-        <AmountNumpad
-          value={amount}
-          onChange={setAmount}
-          onConfirm={() => setStep(2)}
-          confirmLabel="Lanjut →"
-          confirmDisabled={!amount || Number(amount) <= 0}
-        />
-      </div>
-    );
-  }
-
-  // ── STEP 2: Details ──
   return (
-    <div className="flex flex-col gap-3.5 px-4 pt-2 pb-4">
-      {/* Amount summary — tap to go back */}
-      <button
-        type="button"
-        onClick={() => setStep(1)}
-        className={[
-          "flex items-center justify-between py-3 px-4 rounded-[14px]",
-          "bg-[#F0EEE9] dark:bg-[#242522]",
-          "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
-          "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
-        ].join(" ")}
-      >
-        <div className="flex items-center gap-2">
-          <span className="text-[14px]">{type === "hutang" ? "🔴" : "🟢"}</span>
-          <span className={[
-            "text-[10px] font-bold uppercase tracking-wide",
-            type === "hutang" ? "text-[#C94A1C] dark:text-[#E87340]" : "text-[#1E8A5A] dark:text-[#4CAF7A]",
-          ].join(" ")}>
-            {type === "hutang" ? "Hutang" : "Piutang"}
-          </span>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-[10px] px-[18px] pt-2 pb-[18px]">
+      {/* Type selector */}
+      {!isEdit && (
+        <div>
+          <div className="flex rounded-[10px] overflow-hidden bg-[#F0EEE9] dark:bg-[#242522] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]">
+            {(["hutang", "piutang"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setType(t)}
+                className={[
+                  "flex-1 py-2.5 text-[12px] font-bold transition-all duration-150",
+                  type === t
+                    ? t === "hutang"
+                      ? "bg-[#C94A1C] dark:bg-[#E87340] text-white rounded-[8px] mx-0.5 my-0.5"
+                      : "bg-[#1E8A5A] dark:bg-[#4CAF7A] text-white rounded-[8px] mx-0.5 my-0.5"
+                    : "text-[#9E9B98] dark:text-[#4A4948]",
+                ].join(" ")}
+              >
+                {t === "hutang" ? "🔴 Hutang" : "🟢 Piutang"}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-center text-[#9E9B98] dark:text-[#4A4948] mt-1.5">
+            {type === "hutang" ? "Gua pinjam uang dari orang lain" : "Orang lain pinjam uang dari gua"}
+          </p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="font-mono text-[16px] font-bold text-[#1A1917] dark:text-[#F0EEE9]">
-            Rp {Number(amount).toLocaleString("id-ID")}
-          </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#9E9B98]">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-          </svg>
-        </div>
-      </button>
+      )}
 
       {/* Person name */}
       <div>
@@ -161,10 +119,28 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
         />
       </div>
 
+      {/* Amount — native keyboard */}
+      <div>
+        <label className={label}>Nominal</label>
+        <div className="relative">
+          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-[13px] font-mono text-[#9E9B98] dark:text-[#4A4948]">
+            Rp
+          </span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={formatAmountDisplay(amount)}
+            onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+            placeholder="0"
+            className={inputField + " pl-10 font-mono font-semibold"}
+          />
+        </div>
+      </div>
+
       {/* Description */}
       <div>
         <label className={label}>
-          Keterangan <span className="font-normal normal-case text-[#C8C6C2] dark:text-[#3A3938]">(opsional)</span>
+          Keterangan <span className="font-normal text-[#C8C6C2] dark:text-[#3A3938]">(opsional)</span>
         </label>
         <input
           type="text"
@@ -190,7 +166,7 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
         </div>
         <div>
           <label className={label}>
-            Jatuh tempo <span className="font-normal normal-case text-[#C8C6C2] dark:text-[#3A3938]">(opsional)</span>
+            Jatuh tempo <span className="font-normal text-[#C8C6C2] dark:text-[#3A3938]">(opsional)</span>
           </label>
           <input
             type="date"
@@ -202,7 +178,7 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
       </div>
 
       {/* Toggles */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-[6px]">
         <label className={toggleRow}>
           <div>
             <p className="text-[12px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">
@@ -251,13 +227,13 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2.5 pt-1">
+      <div className="flex gap-2.5 pt-[8px]">
         <button
           type="button"
           onClick={onCancel}
           disabled={loading}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold",
             "bg-[#F0EEE9] dark:bg-[#242522] text-[#1A1917] dark:text-[#F0EEE9]",
             "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
             "active:scale-95 disabled:opacity-50",
@@ -266,11 +242,10 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
           Batal
         </button>
         <button
-          type="button"
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading || !personName.trim() || !amount || !borrowDate}
           className={[
-            "flex-1 py-3 rounded-[12px] text-[13px] font-bold text-white",
+            "flex-1 py-3 rounded-[10px] text-[13px] font-bold text-white",
             "transition-all active:scale-95",
             "disabled:opacity-50 disabled:cursor-not-allowed",
           ].join(" ")}
@@ -283,6 +258,6 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
           ) : isEdit ? "Simpan" : "Tambah"}
         </button>
       </div>
-    </div>
+    </form>
   );
 }

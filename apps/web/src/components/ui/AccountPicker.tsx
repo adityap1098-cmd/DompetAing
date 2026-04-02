@@ -65,7 +65,7 @@ export function AccountPicker({
             >
               {/* Icon */}
               <div
-                className="w-10 h-10 rounded-[12px] flex items-center justify-center text-[18px] shrink-0"
+                className="w-10 h-10 rounded-[10px] flex items-center justify-center text-[18px] shrink-0"
                 style={{ backgroundColor: account.color ? `${account.color}1A` : "rgba(46,125,90,0.1)" }}
               >
                 {account.icon}
