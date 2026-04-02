@@ -47,8 +47,8 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
       person_name: personName.trim(),
       amount: numAmount,
       description: description.trim() || undefined,
-      borrow_date: new Date(borrowDate).toISOString(),
-      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
+      borrow_date: borrowDate + "T12:00:00",
+      due_date: dueDate ? dueDate + "T12:00:00" : undefined,
       reminder_enabled: reminderEnabled,
       auto_record: autoRecord,
     });
