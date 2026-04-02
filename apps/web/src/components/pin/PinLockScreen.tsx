@@ -65,7 +65,6 @@ export function PinLockScreen({ onUnlock }: PinLockScreenProps) {
       { action: "verify_pin", pin: fullPin },
       {
         onSuccess: () => {
-          sessionStorage.setItem("da_pin_unlocked", "1");
           onUnlock();
         },
         onError: () => {
@@ -106,8 +105,7 @@ export function PinLockScreen({ onUnlock }: PinLockScreenProps) {
   }, [isLockedOut]);
 
   const handleForgotPin = useCallback(() => {
-    // Clear session and redirect to login for re-authentication
-    sessionStorage.clear();
+    // Redirect to login for re-authentication
     window.location.href = "/login";
   }, []);
 

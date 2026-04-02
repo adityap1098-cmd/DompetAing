@@ -62,16 +62,15 @@ const queryClient = new QueryClient({
 const persister = createIDBPersister();
 
 // ── PIN Lock Screen ──
-const PIN_SESSION_KEY = "da_pin_unlocked";
+// Memory-only flag: resets on every page load/refresh → always locked on restart
+let pinUnlockedThisSession = false;
 
 // ── Protected Route Guard ──
 function ProtectedLayout() {
   const { isLoading, isAuthenticated, isUnauthenticated, user } = useAuth();
   useColorScheme();
 
-  const [pinUnlocked, setPinUnlocked] = useState(
-    () => sessionStorage.getItem(PIN_SESSION_KEY) === "1"
-  );
+  const [pinUnlocked, setPinUnlocked] = useState(() => pinUnlockedThisSession);
 
   // Initialize offline network listeners
   useEffect(() => {
@@ -79,14 +78,7 @@ function ProtectedLayout() {
   }, []);
 
   // When user data loads, check if PIN lock should show
-  const pinRequired = !isLoading && isAuthenticated && (user as (typeof user & { pin_set?: boolean }))?.pin_set && !pinUnlocked;
-
-  useEffect(() => {
-    // If user just loaded and pin is not set, ensure no stale lock state
-    if (user && !(user as typeof user & { pin_set?: boolean }).pin_set) {
-      sessionStorage.removeItem(PIN_SESSION_KEY);
-    }
-  }, [user]);
+  const pinRequired = !isLoading && isAuthenticated && user?.pin_set && !pinUnlocked;
 
   if (isLoading) {
     return (
@@ -101,7 +93,14 @@ function ProtectedLayout() {
   }
 
   if (pinRequired) {
-    return <PinLockScreen onUnlock={() => setPinUnlocked(true)} />;
+    return (
+      <PinLockScreen
+        onUnlock={() => {
+          pinUnlockedThisSession = true;
+          setPinUnlocked(true);
+        }}
+      />
+    );
   }
 
   return (
