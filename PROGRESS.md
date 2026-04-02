@@ -584,3 +584,112 @@ fallback → Belanja
 - Gojek sender overlap dengan GoPay — marketplace parser memfilter berdasarkan content (receipt vs payment notif)
 - Amount tolerance Rp 5.000 mengakomodasi biaya admin/ongkir yang mungkin berbeda antara email bank dan marketplace
 
+---
+
+## PWA Cache Fix + PIN Redesign + Push Notifications ✅ DONE
+**Date:** 2026-04-01
+
+### TASK 1 — PWA Cache Stale Fix
+
+**Problem:** Service worker cache stale — PIN redesign dari session sebelumnya tidak muncul karena user masih serve versi lama.
+
+**Fix di `apps/web/vite.config.ts`:**
+- Tambah `cleanupOutdatedCaches: true` — hapus cache lama otomatis
+- Tambah `navigateFallback: "/index.html"` — SPA routing via SW
+- Tambah `additionalManifestEntries` dengan `revision: Date.now()` — force precache manifest berubah setiap build
+- `skipWaiting: true` + `clientsClaim: true` sudah ada — SW baru langsung aktif
+
+**Efek:** Setiap build menghasilkan SW baru dengan revision berbeda → browser auto-update tanpa perlu clear cache manual.
+
+---
+
+### TASK 2 — Push Notifications (Firebase Cloud Messaging)
+
+**Backend — Prisma:**
+- Model `PushSubscription` — id, user_id, fcm_token, device, is_active, created_at
+- Field `notif_push` (Boolean, default true) di User model
+- Migration `20260401_push_subscriptions` — applied di VPS
+
+**Backend — Push Service:**
+- `apps/api/src/services/push.service.ts`:
+  - `sendPush(payload)` — core: buat in-app notification + kirim FCM push
+  - `pushBudgetAlert()` — "⚠️ Budget Makanan hampir habis" + sisa Rp
+  - `pushDebtReminder()` — "⏰ Hutang jatuh tempo besok" + nama + jumlah
+  - `pushGmailSync()` — "📧 transaksi baru terdeteksi" + jumlah
+  - `pushWeeklyReport()` — "📊 Laporan minggu ini" + total pengeluaran
+  - `pushRecurring()` — "🔁 Transaksi berulang tercatat" + deskripsi + jumlah
+  - Lazy-init Firebase Admin SDK — skip jika env vars kosong
+  - Auto-cleanup stale FCM tokens (invalid/unregistered → `is_active = false`)
+
+**Backend — Routes:**
+- `apps/api/src/routes/push.ts`:
+  - `POST /push/register` — upsert FCM token (reactivate jika sudah ada)
+  - `POST /push/unregister` — deactivate FCM token
+- `apps/api/src/routes/settings.ts` — `PUT /settings/notifications` support `notif_push` field
+- `apps/api/src/routes/auth.ts` — `GET /auth/me` return `notif_push`
+
+**Backend — Push Integration Points:**
+1. **Budget threshold** — `cron/notifications.ts` → `pushBudgetAlert()` (menggantikan `createNotif` lama)
+2. **Debt reminder H-1** — `cron/notifications.ts` → `pushDebtReminder()`
+3. **Weekly report Senin** — `cron/notifications.ts` → `pushWeeklyReport()`
+4. **Recurring transaction** — `cron/recurring.ts` → `pushRecurring()` setelah transaksi dibuat
+5. **Gmail sync** — `routes/gmail.ts` → `pushGmailSync()` saat sync menemukan transaksi baru
+
+**Backend — env.ts:**
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (optional — push disabled jika kosong)
+
+**Frontend — Firebase:**
+- `apps/web/public/firebase-messaging-sw.js` — service worker untuk receive background push
+  - `onBackgroundMessage` → `showNotification` dengan icon DompetAing
+  - `notificationclick` → focus/open app ke URL yang relevan
+- `apps/web/src/lib/push.ts`:
+  - `isPushSupported()` — cek browser support
+  - `getPushPermission()` — cek permission state
+  - `requestPushPermission()` — minta izin → get FCM token → POST /push/register
+  - `onForegroundMessage()` — listener untuk push saat app terbuka → tampil toast
+- `apps/web/src/hooks/usePush.ts` — hook: `supported`, `isEnabled`, `isBlocked`, `requestPermission()`
+
+**Frontend — Settings:**
+- Toggle "Notifikasi Push" di section Notifikasi
+  - Jika belum aktif → tap toggle → `Notification.requestPermission()` → register token
+  - Jika sudah granted → toggle terkunci di "Aktif"
+  - Jika browser blokir → badge "Diblokir" + pesan "Aktifkan di pengaturan browser"
+- `vite.config.ts` manifest: `gcm_sender_id: "103953800507"` untuk FCM
+
+### Push Flow
+```
+1. User buka Settings → tap toggle "Notifikasi Push"
+2. Browser minta izin → user tap "Allow"
+3. Firebase SDK generate FCM token
+4. Frontend POST /push/register { fcm_token, device: "web" }
+5. Backend simpan di PushSubscription table
+
+Saat event terjadi (misal budget 80%):
+6. Backend: pushBudgetAlert(userId, ...)
+   → INSERT Notification (in-app)
+   → SELECT FCM tokens WHERE user_id AND is_active
+   → Firebase Admin SDK messaging.send({ token, notification, data })
+7. Browser receive push:
+   - Jika app fokus → onForegroundMessage → showToast
+   - Jika background → firebase-messaging-sw.js → showNotification
+8. User tap notifikasi → open app ke /budget
+```
+
+### Type-Check
+- ✅ `apps/api` — `npx tsc --noEmit` — 0 errors
+- ✅ `apps/web` — `npx tsc --noEmit` — 0 errors
+
+### Deploy
+- ✅ `git push origin main` — commit dc87c0b
+- ✅ VPS: `docker compose build --parallel` — both images built
+- ✅ VPS: `prisma migrate deploy` — migration 20260401_push_subscriptions applied
+- ✅ VPS: `docker compose up -d` — 3 containers healthy
+- ✅ API health: `{"status":"ok"}`
+
+### Catatan
+- Firebase Admin SDK lazy-init — jika env vars kosong, push silently skipped tapi in-app notif tetap dibuat
+- `sendPush()` selalu buat in-app notification terlebih dahulu, lalu coba kirim FCM (best-effort)
+- Stale FCM tokens auto-deactivated saat Firebase return `messaging/registration-token-not-registered`
+- `firebase-messaging-sw.js` di `/public` agar served di root path — required by FCM
+- Untuk mengaktifkan push di production, isi env: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, dan frontend VITE vars: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_VAPID_KEY`
+
