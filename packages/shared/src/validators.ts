@@ -44,7 +44,7 @@ const TransactionBaseSchema = z.object({
   to_account_id: z.string().cuid().optional(),
   description: z.string().min(1).max(255),
   notes: z.string().max(1000).optional(),
-  date: z.string().datetime(),
+  date: z.string().datetime({ offset: true }),
   debt_id: z.string().cuid().optional(),
 });
 
@@ -80,8 +80,8 @@ export const CreateBudgetSchema = z.object({
   period_type: z.enum(["monthly", "weekly", "custom"]),
   period_month: z.number().int().min(1).max(12).optional(),
   period_year: z.number().int().min(2000).max(2100).optional(),
-  start_date: z.string().datetime().optional(),
-  end_date: z.string().datetime().optional(),
+  start_date: z.string().datetime({ offset: true }).optional(),
+  end_date: z.string().datetime({ offset: true }).optional(),
 });
 
 export const UpdateBudgetSchema = z.object({
@@ -94,8 +94,8 @@ export const CreateDebtSchema = z.object({
   person_name: z.string().min(1).max(100),
   amount: z.number().positive(),
   description: z.string().max(500).optional(),
-  borrow_date: z.string().datetime(),
-  due_date: z.string().datetime().optional(),
+  borrow_date: z.string().datetime({ offset: true }),
+  due_date: z.string().datetime({ offset: true }).optional(),
   reminder_enabled: z.boolean().default(true),
   auto_record: z.boolean().default(true),
 });

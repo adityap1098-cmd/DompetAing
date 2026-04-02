@@ -93,7 +93,7 @@ export function TransactionForm({
           : type === "income"
           ? selectedCategory?.name ?? "Pemasukan"
           : selectedCategory?.name ?? "Pengeluaran"),
-      date: date + "T12:00:00",
+      date: date + "T12:00:00+07:00",
     };
 
     if (type !== "transfer") {
