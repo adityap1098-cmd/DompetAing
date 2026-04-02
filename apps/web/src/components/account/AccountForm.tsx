@@ -260,7 +260,7 @@ export function AccountForm({ account, onSubmit, onCancel, loading = false }: Ac
           Batal
         </Button>
         <Button variant="primary" fullWidth type="submit" loading={loading}>
-          {account ? "Simpan" : "Tambah Akun"}
+          {account ? "Simpan" : "Tambah Aset"}
         </Button>
       </div>
     </form>

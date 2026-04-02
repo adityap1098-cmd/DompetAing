@@ -106,7 +106,7 @@ export function AccountDetailPage() {
       </div>
 
       {/* Edit Modal */}
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Akun">
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Edit Aset">
         <AccountForm
           account={account}
           onSubmit={handleEdit}

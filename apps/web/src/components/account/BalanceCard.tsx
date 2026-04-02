@@ -17,7 +17,7 @@ export function BalanceCard({ netWorth, accountCount }: BalanceCardProps) {
         {formatAmount(netWorth)}
       </p>
       <p className="text-[10px] opacity-70">
-        {accountCount === 0 ? "Belum ada akun" : `Dari ${accountCount} akun`}
+        {accountCount === 0 ? "Belum ada aset" : `Dari ${accountCount} aset`}
       </p>
     </div>
   );

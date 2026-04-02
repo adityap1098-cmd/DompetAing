@@ -97,7 +97,7 @@ export function AccountsPage() {
   return (
     <div className="flex flex-col">
       <Header
-        title="Akun"
+        title="Aset"
       />
 
       <div className="pt-4 pb-24">
@@ -114,14 +114,14 @@ export function AccountsPage() {
           <div className="px-[17px]">
             <EmptyState
               icon="🏦"
-              title="Belum ada akun"
+              title="Belum ada aset"
               description="Tambahkan rekening bank, e-wallet, atau uang tunai untuk mulai mencatat keuangan kamu"
               action={
                 <button
                   onClick={handleAdd}
                   className="px-4 py-2 bg-accent-500 dark:bg-accent-dark text-white text-[11px] font-bold rounded-[10px]"
                 >
-                  + Tambah Akun Pertama
+                  + Tambah Aset Pertama
                 </button>
               }
             />
@@ -143,7 +143,7 @@ export function AccountsPage() {
                 <button type="button" onClick={handleAdd}
                   className="w-full py-2.5 rounded-[10px] text-[13px] font-bold text-white active:scale-95 transition-all"
                   style={{ backgroundColor: "var(--accent)" }}>
-                  + Tambah Akun
+                  + Tambah Aset
                 </button>
               </div>
             )}
@@ -155,7 +155,7 @@ export function AccountsPage() {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Tambah Akun"
+        title="Tambah Aset"
       >
         {atFreeLimit ? (
           <UpgradePrompt />
@@ -173,7 +173,7 @@ export function AccountsPage() {
       <Modal
         isOpen={editingAccount !== null}
         onClose={() => setEditingAccount(null)}
-        title="Edit Akun"
+        title="Edit Aset"
       >
         {editingAccount && (
           <AccountForm

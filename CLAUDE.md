@@ -20,3 +20,13 @@ burgundy, charcoal,
 islamic_gold, ocean_wave, forest_nature,
 sakura_pink, geometric_dark, batik_heritage
 ```
+
+## RULE 5: Dashboard empty states WAJIB selalu ada
+Dashboard empty states WAJIB selalu ada untuk:
+- **Aset Saya**: Jika belum ada akun → icon 🏦 + "Belum ada aset" + tombol "+ Tambah Aset"
+- **Budget Bulan Ini**: Jika belum ada budget → empty state + link buat budget
+- **Hutang & Piutang**: Jika belum ada hutang → empty state
+- **Transaksi Terbaru**: Jika belum ada transaksi → empty state
+
+JANGAN PERNAH hapus empty state saat edit Dashboard.tsx.
+Setiap section di Dashboard HARUS punya 3 state: loading, empty, dan data.

@@ -344,7 +344,7 @@ export function SettingsPage() {
         {/* Navigation Links */}
         <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] overflow-hidden">
           {[
-            { icon: "🏦", label: "Kelola Akun", to: "/accounts" },
+            { icon: "🏦", label: "Kelola Aset", to: "/accounts" },
             { icon: "🏷️", label: "Kelola Kategori", to: "/categories" },
             { icon: "🔄", label: "Transaksi Berulang", to: "/recurring" },
             { icon: "📊", label: "Laporan & Analitik", to: "/reports" },

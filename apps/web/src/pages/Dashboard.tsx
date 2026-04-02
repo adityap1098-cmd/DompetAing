@@ -149,7 +149,7 @@ export function DashboardPage() {
             <Link to="/settings" className="opacity-60 text-sm">👁️</Link>
           </div>
           {!accountsLoading && accountCount === 0 && (
-            <p className="text-[9px] opacity-60 mb-2">Belum ada akun — tambah akun untuk mulai</p>
+            <p className="text-[9px] opacity-60 mb-2">Belum ada aset — tambah aset untuk mulai</p>
           )}
           {(accountsLoading || accountCount > 0) && <div className="mb-2.5" />}
 
@@ -170,10 +170,10 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Akun Saya ── */}
+        {/* ── Aset Saya ── */}
         <>
           <div className="flex items-center justify-between px-[17px] pt-1 pb-2">
-            <p className="text-[12px] font-bold text-[#1A1917] dark:text-[#F0EEE9]">Akun Saya</p>
+            <p className="text-[12px] font-bold text-[#1A1917] dark:text-[#F0EEE9]">Aset Saya</p>
             {accountCount > 0 && (
               <Link to="/accounts" className="text-[10px] font-semibold text-accent-500 dark:text-accent-dark">
                 Lihat semua →
@@ -187,7 +187,7 @@ export function DashboardPage() {
           ) : accountCount === 0 ? (
             <div className="mx-[17px] mb-3 bg-white dark:bg-[#1C1D1A] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[14px] p-5 flex flex-col items-center text-center">
               <span className="text-3xl mb-2">🏦</span>
-              <p className="text-[12px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">Belum ada akun</p>
+              <p className="text-[12px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">Belum ada aset</p>
               <p className="text-[10px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5 mb-3">
                 Tambah rekening bank atau e-wallet untuk mulai catat keuangan
               </p>
@@ -195,7 +195,7 @@ export function DashboardPage() {
                 to="/accounts?add=true"
                 className="inline-flex items-center gap-1 px-4 py-2 rounded-[10px] border border-accent-500 dark:border-accent-dark text-accent-500 dark:text-accent-dark text-[11px] font-semibold hover:bg-accent-500/5 transition-colors"
               >
-                + Tambah Akun
+                + Tambah Aset
               </Link>
             </div>
           ) : (
