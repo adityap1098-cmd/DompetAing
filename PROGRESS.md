@@ -693,3 +693,55 @@ Saat event terjadi (misal budget 80%):
 - `firebase-messaging-sw.js` di `/public` agar served di root path — required by FCM
 - Untuk mengaktifkan push di production, isi env: `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, dan frontend VITE vars: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_VAPID_KEY`
 
+---
+
+## Full Offline Support ✅ DONE
+**Date:** 2026-04-02
+
+### Apa yang sudah dibuat
+
+**IndexedDB Local Storage (Dexie.js):**
+- `apps/web/src/lib/offline/db.ts` — Dexie.js database `DompetAingOffline` v1: 8 tables (accounts, transactions, categories, budgets, debts, recurring, offlineQueue, syncMeta)
+- Typed interfaces for all offline data shapes
+- `clearOfflineData()` — hapus semua data offline (dipanggil saat logout)
+
+**Data Sync (Server → IndexedDB):**
+- `apps/web/src/lib/offline/sync.ts` — sync functions: accounts, transactions (200 recent), categories, budgets, debts, recurring
+- `syncAllData()` — parallel sync all, triggered on app start + coming back online
+
+**Offline Queue:**
+- `apps/web/src/lib/offline/queue.ts` — FIFO mutation queue in IndexedDB
+- Saat offline, user tambah/edit/delete transaksi → queue + local apply
+- Saat online kembali → auto-sync queue ke server, urut waktu
+- Max 3 retries per item, last-write-wins conflict resolution
+
+**Online/Offline Detection:**
+- `apps/web/src/lib/offline/networkStore.ts` — Zustand store: isOnline, isSyncing, syncProgress, pendingCount
+- `navigator.onLine` + event listeners `online`/`offline`
+- `performSync()` — 2-phase: push queue → pull fresh data
+
+**UI Components:**
+- `OfflineBanner.tsx` — sticky banner "Kamu sedang offline · X perubahan menunggu sinkronisasi" + "Menyinkronkan X/Y perubahan..."
+- `OfflineBadge.tsx` — amber badge "Offline" pada item yang belum sync
+- `AppShell.tsx` — OfflineBanner di atas main content
+
+**TanStack Query + IndexedDB Persister:**
+- `apps/web/src/lib/offline/persister.ts` — custom persister: query cache → IndexedDB (max 24h)
+- `PersistQueryClientProvider`, `networkMode: "offlineFirst"`, `gcTime: 24h`
+
+**Computed Values Offline:**
+- `apps/web/src/lib/offline/computed.ts` — computeAccountBalance, computeNetWorth, computeBudgetSpent, computeMonthTotals, computeDebtSummary
+
+**Hooks Updated with Offline Fallback:**
+- useTransactions, useAccounts, useBudgets, useDebts, useCategories, useRecurring — all serve from IndexedDB when offline
+- useAuth — clear offline data on logout, no retry when offline
+
+### Type-Check
+- ✅ `apps/web` — `npx tsc --noEmit` — 0 errors
+
+### Deploy
+- ✅ `git push origin main` — commit 2792a73
+- ✅ VPS: `docker compose build --no-cache web` — image rebuilt
+- ✅ VPS: `docker compose up -d` — 3 containers healthy
+- ✅ API health OK, Web HTTP 200, IndexedDB + offlineQueue confirmed in bundle
+
