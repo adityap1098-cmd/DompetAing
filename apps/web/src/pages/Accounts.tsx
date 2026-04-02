@@ -137,6 +137,16 @@ export function AccountsPage() {
                 onDelete={() => setDeletingAccount(account)}
               />
             ))}
+            {/* Add account button */}
+            {!atFreeLimit && (
+              <div className="px-[17px] pt-3">
+                <button type="button" onClick={handleAdd}
+                  className="w-full py-2.5 rounded-[10px] text-[13px] font-bold text-white active:scale-95 transition-all"
+                  style={{ backgroundColor: "var(--accent)" }}>
+                  + Tambah Akun
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

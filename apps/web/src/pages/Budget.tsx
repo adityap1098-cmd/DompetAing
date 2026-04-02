@@ -312,7 +312,14 @@ export function BudgetPage() {
         <div className="flex-1">
           <EmptyState icon="🎯" title="Belum ada budget"
             description={`Set budget ${MONTH_NAMES[month - 1]} ${year} untuk kontrol pengeluaran`} />
-          <div className="px-6 pb-6">
+          <div className="px-6 pb-6 space-y-2">
+            {!atFreeLimit && (
+              <button type="button" onClick={() => setIsAddOpen(true)}
+                className="w-full py-2.5 rounded-[10px] text-[13px] font-bold text-white active:scale-95 transition-all"
+                style={{ backgroundColor: "var(--accent)" }}>
+                + Tambah Budget
+              </button>
+            )}
             <button type="button" onClick={handleCopyPrevious}
               disabled={copyBudget.isPending || hasPrevBudgets === false}
               className="w-full py-2.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
@@ -407,8 +414,15 @@ export function BudgetPage() {
             ))}
           </div>
 
-          {/* Copy previous month */}
-          <div className="px-[17px] pt-1">
+          {/* Add + Copy previous month */}
+          <div className="px-[17px] pt-1 space-y-2">
+            {!atFreeLimit && (
+              <button type="button" onClick={() => setIsAddOpen(true)}
+                className="w-full py-2.5 rounded-[10px] text-[13px] font-bold text-white active:scale-95 transition-all"
+                style={{ backgroundColor: "var(--accent)" }}>
+                + Tambah Budget
+              </button>
+            )}
             <button type="button" onClick={handleCopyPrevious}
               disabled={copyBudget.isPending || hasPrevBudgets === false}
               className="w-full py-2.5 rounded-[10px] border border-dashed border-[rgba(0,0,0,0.12)] dark:border-[rgba(255,255,255,0.12)] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96] bg-white dark:bg-[#1C1D1A] hover:opacity-80 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
