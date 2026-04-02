@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Toggle } from "@/components/ui/Toggle";
+import { CategoryPicker } from "@/components/ui/CategoryPicker";
+import { AccountPicker } from "@/components/ui/AccountPicker";
 import { showToast } from "@/components/ui/Toast";
 import { formatRupiah } from "@/lib/format";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -178,10 +180,14 @@ function PendingItem({
   const { data: categories = [] } = useCategories();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [form, setForm] = useState<ApprovePayload>({
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
+
+  const [form, setForm] = useState<ApprovePayload & { sub_category_id?: string }>({
     amount: review.parsed_amount ?? 0,
     type: review.parsed_type ?? "expense",
     category_id: review.suggested_category?.id ?? "",
+    sub_category_id: "",
     account_id: review.suggested_account?.id ?? "",
     description: review.parsed_merchant
       ? `${review.bank_name ?? ""}: ${review.parsed_merchant}`.trim()
@@ -204,7 +210,13 @@ function PendingItem({
       : c.type === "expense" || c.type === "both"
   );
 
-  function set<K extends keyof ApprovePayload>(key: K, value: ApprovePayload[K]) {
+  const selectedCategory = availableCategories.find((c) => c.id === form.category_id);
+  const selectedAccount = accounts.find((a) => a.id === form.account_id);
+  const selectedSubCategory = selectedCategory?.sub_categories?.find(
+    (s) => s.id === form.sub_category_id
+  );
+
+  function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -213,8 +225,23 @@ function PendingItem({
       ? (BANK_COLORS[review.bank_name] ?? "bg-[#F0EEE9] dark:bg-[#242522] text-[#6B6864] dark:text-[#9E9B96]")
       : "bg-[#F0EEE9] dark:bg-[#242522] text-[#6B6864] dark:text-[#9E9B96]";
 
-  const inputCls =
-    "w-full rounded-[10px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] bg-[#F7F6F3] dark:bg-[#111210] text-[#1A1917] dark:text-[#F0EEE9] px-3 py-2 text-[12px]";
+  const fieldBtn = [
+    "flex items-center gap-3 w-full px-3 py-2.5 rounded-[12px] text-left",
+    "bg-[#F0EEE9] dark:bg-[#242522]",
+    "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
+    "hover:bg-[#E8E6E0] dark:hover:bg-[#2C2D2A] transition-colors",
+  ].join(" ");
+
+  const inputCls = [
+    "w-full px-3 py-2.5 rounded-[12px] text-[12px]",
+    "bg-[#F0EEE9] dark:bg-[#242522]",
+    "border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]",
+    "text-[#1A1917] dark:text-[#F0EEE9]",
+    "placeholder:text-[#9E9B98] dark:placeholder:text-[#4A4948]",
+    "focus:outline-none focus:border-[var(--accent)]",
+  ].join(" ");
+
+  const labelCls = "block text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] mb-1 uppercase tracking-[0.06em]";
 
   return (
     <div className="border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] rounded-[14px] bg-white dark:bg-[#1C1D1A] p-3 space-y-2.5">
@@ -263,22 +290,23 @@ function PendingItem({
         </div>
       </div>
 
-      {/* Inline edit fields */}
+      {/* Edit fields — bottom-sheet picker style */}
       {isEditing && (
-        <div className="space-y-2 pt-1 border-t border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]">
-          {/* Type */}
-          <div className="flex gap-2">
+        <div className="space-y-2.5 pt-2 border-t border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]">
+          {/* Type tabs */}
+          <div className="flex rounded-[10px] overflow-hidden bg-[#F0EEE9] dark:bg-[#242522] border border-[rgba(0,0,0,0.06)] dark:border-[rgba(255,255,255,0.06)]">
             {(["expense", "income"] as const).map((t) => (
               <button
                 key={t}
-                onClick={() => set("type", t)}
+                type="button"
+                onClick={() => { set("type", t); set("category_id", ""); set("sub_category_id", ""); }}
                 className={[
-                  "flex-1 py-2 rounded-[10px] text-[11px] font-semibold border transition-colors",
+                  "flex-1 py-2 text-[11px] font-bold transition-all",
                   form.type === t
                     ? t === "expense"
-                      ? "bg-[#C94A1C]/10 border-[#C94A1C]/30 text-[#C94A1C] dark:bg-[#E87340]/10 dark:border-[#E87340]/30 dark:text-[#E87340]"
-                      : "bg-[#1E8A5A]/10 border-[#1E8A5A]/30 text-[#1E8A5A] dark:bg-[#4CAF7A]/10 dark:border-[#4CAF7A]/30 dark:text-[#4CAF7A]"
-                    : "border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] text-[#6B6864] dark:text-[#9E9B96]",
+                      ? "bg-[#C94A1C] dark:bg-[#E87340] text-white rounded-[8px] mx-0.5 my-0.5"
+                      : "bg-[#1E8A5A] dark:bg-[#4CAF7A] text-white rounded-[8px] mx-0.5 my-0.5"
+                    : "text-[#9E9B98] dark:text-[#4A4948]",
                 ].join(" ")}
               >
                 {t === "expense" ? "Pengeluaran" : "Pemasukan"}
@@ -287,57 +315,109 @@ function PendingItem({
           </div>
 
           {/* Amount */}
-          <input
-            type="number"
-            value={form.amount}
-            onChange={(e) => set("amount", Number(e.target.value))}
-            placeholder="Jumlah"
-            className={inputCls}
-          />
+          <div>
+            <label className={labelCls}>Nominal</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={form.amount ? Number(form.amount).toLocaleString("id-ID") : ""}
+              onChange={(e) => set("amount", Number(e.target.value.replace(/\D/g, "")))}
+              placeholder="0"
+              className={inputCls + " font-mono font-semibold"}
+            />
+          </div>
+
+          {/* Account picker button */}
+          <div>
+            <label className={labelCls}>Akun</label>
+            <button type="button" onClick={() => setShowAccountPicker(true)} className={fieldBtn}>
+              {selectedAccount ? (
+                <>
+                  <div
+                    className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[12px] shrink-0"
+                    style={{ backgroundColor: `${selectedAccount.color}1A` }}
+                  >
+                    {selectedAccount.icon}
+                  </div>
+                  <span className="flex-1 text-[12px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">
+                    {selectedAccount.name}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[12px] text-[#9E9B98] dark:text-[#4A4948]">Pilih akun...</span>
+              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#9E9B98] shrink-0">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Category picker button */}
+          <div>
+            <label className={labelCls}>Kategori</label>
+            <button type="button" onClick={() => setShowCategoryPicker(true)} className={fieldBtn}>
+              {selectedCategory ? (
+                <>
+                  <div
+                    className="w-7 h-7 rounded-[8px] flex items-center justify-center text-[12px] shrink-0"
+                    style={{ backgroundColor: `${selectedCategory.color}1A` }}
+                  >
+                    {selectedCategory.icon}
+                  </div>
+                  <span className="flex-1 text-[12px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">
+                    {selectedCategory.name}
+                    {selectedSubCategory ? ` · ${selectedSubCategory.name}` : ""}
+                  </span>
+                </>
+              ) : (
+                <span className="text-[12px] text-[#9E9B98] dark:text-[#4A4948]">Pilih kategori...</span>
+              )}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#9E9B98] shrink-0">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
 
           {/* Description */}
-          <input
-            type="text"
-            value={form.description}
-            onChange={(e) => set("description", e.target.value)}
-            placeholder="Deskripsi"
-            className={inputCls}
-          />
-
-          {/* Account */}
-          <select
-            value={form.account_id}
-            onChange={(e) => set("account_id", e.target.value)}
-            className={inputCls}
-          >
-            <option value="">Pilih akun</option>
-            {accounts.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.icon} {a.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Category */}
-          <select
-            value={form.category_id ?? ""}
-            onChange={(e) => set("category_id", e.target.value)}
-            className={inputCls}
-          >
-            <option value="">Tanpa kategori</option>
-            {availableCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.icon} {c.name}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className={labelCls}>Keterangan</label>
+            <input
+              type="text"
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              placeholder="Deskripsi"
+              className={inputCls}
+            />
+          </div>
 
           {/* Date */}
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => set("date", e.target.value)}
-            className={inputCls}
+          <div>
+            <label className={labelCls}>Tanggal</label>
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set("date", e.target.value)}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Pickers */}
+          <CategoryPicker
+            isOpen={showCategoryPicker}
+            onClose={() => setShowCategoryPicker(false)}
+            categories={availableCategories}
+            selectedId={form.category_id ?? ""}
+            onSelect={(catId, subId) => {
+              set("category_id", catId);
+              set("sub_category_id", subId ?? "");
+            }}
+          />
+          <AccountPicker
+            isOpen={showAccountPicker}
+            onClose={() => setShowAccountPicker(false)}
+            accounts={accounts}
+            selectedId={form.account_id}
+            onSelect={(id) => set("account_id", id)}
           />
         </div>
       )}
@@ -347,17 +427,22 @@ function PendingItem({
         <div className="flex gap-2">
           <button
             onClick={() => setIsEditing(false)}
-            className="flex-1 py-2 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
+            className="flex-1 py-2.5 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
           >
             Batal
           </button>
           <button
             onClick={() => {
-              onApprove(form);
+              const payload: ApprovePayload = { ...form };
+              if (form.sub_category_id) {
+                (payload as ApprovePayload & { sub_category_id?: string }).sub_category_id = form.sub_category_id;
+              }
+              onApprove(payload);
               setIsEditing(false);
             }}
             disabled={!form.account_id || !form.amount || isApproving}
-            className="flex-[2] py-2 rounded-[10px] bg-accent-500 dark:bg-accent-dark text-white text-[11px] font-semibold disabled:opacity-50"
+            className="flex-[2] py-2.5 rounded-[10px] text-white text-[11px] font-semibold disabled:opacity-50"
+            style={{ backgroundColor: "var(--accent)" }}
           >
             Simpan
           </button>
@@ -366,20 +451,21 @@ function PendingItem({
         <div className="flex gap-2">
           <button
             onClick={() => setIsEditing(true)}
-            className="flex-1 py-2 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
+            className="flex-1 py-2.5 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
           >
             Edit
           </button>
           <button
             onClick={() => onSkip(review.id)}
-            className="flex-1 py-2 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
+            className="flex-1 py-2.5 rounded-[10px] bg-[#F0EEE9] dark:bg-[#242522] text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]"
           >
             Lewati
           </button>
           <button
             onClick={() => onApprove(form)}
             disabled={!form.account_id || !form.amount || isApproving}
-            className="flex-[2] py-2 rounded-[10px] bg-accent-500 dark:bg-accent-dark text-white text-[11px] font-semibold disabled:opacity-50"
+            className="flex-[2] py-2.5 rounded-[10px] text-white text-[11px] font-semibold disabled:opacity-50"
+            style={{ backgroundColor: "var(--accent)" }}
           >
             Simpan
           </button>

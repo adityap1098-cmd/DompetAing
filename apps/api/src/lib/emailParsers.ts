@@ -174,9 +174,11 @@ export const BANK_PATTERNS: BankPattern[] = [
       const type: "expense" | "income" = incomeKeywords.some(k => txnType.includes(k) || body.toLowerCase().includes(k))
         ? "income" : "expense";
 
-      // Merchant dari "Payment to:" atau "Transfer to:" atau pola Indonesia
+      // Merchant — parse from BODY, not subject (subject often contains generic "Internal Transaction Journal")
       const merchant = extractFromPattern(body, [
         /payment\s+to\s*:\s*([^\n\r]+)/i,
+        /company\s*\/?\s*product\s+name\s*:\s*([^\n\r]+)/i,
+        /merchant\s+name\s*:\s*([^\n\r]+)/i,
         /transfer\s+to\s*:\s*([^\n\r]+)/i,
         /paid\s+to\s*:\s*([^\n\r]+)/i,
         /(?:tujuan|penerima|merchant)\s*:\s*([^\n\r]+)/i,
@@ -186,7 +188,7 @@ export const BANK_PATTERNS: BankPattern[] = [
       // Date dari "Transaction Date: 24 Mar 2026 14:13:14"
       const bcaDate = parseBcaDate(body, date);
 
-      const description = merchant ? `BCA: ${merchant}` : (txnType ? `BCA: ${txnType}` : subject.trim() || "Transaksi BCA");
+      const description = merchant ? `BCA: ${merchant}` : (txnType ? `BCA: ${txnType}` : "BCA Transaction");
       return { amount, type, description, merchant, date: bcaDate, bankName: "BCA", rawSubject: subject };
     },
   },
