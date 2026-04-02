@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { offlineDb } from "@/lib/offline/db";
+import { computeBudgetSpent } from "@/lib/offline/computed";
 import type { Budget } from "@dompetaing/shared";
 
 // ── Types ──
@@ -45,12 +47,47 @@ export interface CreateBudgetInput {
 // ── Query Keys ──
 const BUDGETS_KEY = ["budgets"] as const;
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useBudgets(month: number, year: number) {
   return useQuery<BudgetListResponse>({
     queryKey: [...BUDGETS_KEY, { month, year }],
-    queryFn: () =>
-      api.get<BudgetListResponse>(`/budgets?month=${month}&year=${year}`),
+    queryFn: async () => {
+      try {
+        return await api.get<BudgetListResponse>(
+          `/budgets?month=${month}&year=${year}`
+        );
+      } catch (err) {
+        if (!navigator.onLine) {
+          // Serve from IndexedDB with locally computed spent values
+          const budgets = await offlineDb.budgets
+            .filter(
+              (b) => b.period_month === month && b.period_year === year
+            )
+            .toArray();
+
+          let totalBudget = 0;
+          let totalSpent = 0;
+          for (const b of budgets) {
+            const spent = await computeBudgetSpent(b.category_id, month, year);
+            b.spent = spent;
+            b.remaining = Number(b.amount) - spent;
+            b.percentage = Number(b.amount) > 0 ? (spent / Number(b.amount)) * 100 : 0;
+            totalBudget += Number(b.amount);
+            totalSpent += spent;
+          }
+
+          return {
+            total_budget: totalBudget,
+            total_spent: totalSpent,
+            percentage: totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0,
+            month,
+            year,
+            budgets: budgets as unknown as Budget[],
+          };
+        }
+        throw err;
+      }
+    },
   });
 }
 

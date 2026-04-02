@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { offlineDb } from "@/lib/offline/db";
 import type { Category, SubCategory } from "@dompetaing/shared";
 
 // ── Query Keys ──
@@ -38,7 +39,7 @@ export interface DeleteSubCategoryInput {
   subId: string;
 }
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useCategories(params?: { type?: string; search?: string }) {
   const query = new URLSearchParams();
   if (params?.type) query.set("type", params.type);
@@ -47,7 +48,32 @@ export function useCategories(params?: { type?: string; search?: string }) {
 
   return useQuery<Category[]>({
     queryKey: [...CATEGORIES_KEY, params],
-    queryFn: () => api.get<Category[]>(`/categories${qs ? `?${qs}` : ""}`),
+    queryFn: async () => {
+      try {
+        return await api.get<Category[]>(`/categories${qs ? `?${qs}` : ""}`);
+      } catch (err) {
+        if (!navigator.onLine) {
+          let categories = await offlineDb.categories.toArray();
+          if (params?.type) {
+            categories = categories.filter(
+              (c) => c.type === params.type || c.type === "both"
+            );
+          }
+          if (params?.search) {
+            const s = params.search.toLowerCase();
+            categories = categories.filter(
+              (c) =>
+                c.name.toLowerCase().includes(s) ||
+                c.sub_categories?.some((sc) =>
+                  sc.name.toLowerCase().includes(s)
+                )
+            );
+          }
+          return categories as unknown as Category[];
+        }
+        throw err;
+      }
+    },
   });
 }
 

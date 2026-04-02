@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { offlineDb } from "@/lib/offline/db";
+import { computeDebtSummary } from "@/lib/offline/computed";
 import type { Debt } from "@dompetaing/shared";
 
 // ── Types ──
@@ -51,7 +53,7 @@ export interface UnpayDebtResponse {
 // ── Query Keys ──
 const DEBTS_KEY = ["debts"] as const;
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useDebts(params?: {
   type?: "hutang" | "piutang";
   status?: "active" | "paid" | "all";
@@ -65,7 +67,37 @@ export function useDebts(params?: {
 
   return useQuery<DebtListResponse>({
     queryKey: [...DEBTS_KEY, params],
-    queryFn: () => api.get<DebtListResponse>(`/debts${qs ? `?${qs}` : ""}`),
+    queryFn: async () => {
+      try {
+        return await api.get<DebtListResponse>(`/debts${qs ? `?${qs}` : ""}`);
+      } catch (err) {
+        if (!navigator.onLine) {
+          let debts = await offlineDb.debts.toArray();
+
+          // Apply filters
+          if (params?.type) {
+            debts = debts.filter((d) => d.type === params.type);
+          }
+          if (params?.status === "active") {
+            debts = debts.filter((d) => !d.is_paid);
+          } else if (params?.status === "paid") {
+            debts = debts.filter((d) => d.is_paid);
+          }
+
+          const summary = await computeDebtSummary();
+
+          return {
+            summary: {
+              ...summary,
+              hutang_active_count: debts.filter((d) => d.type === "hutang" && !d.is_paid).length,
+              piutang_active_count: debts.filter((d) => d.type === "piutang" && !d.is_paid).length,
+            },
+            debts: debts as unknown as Debt[],
+          };
+        }
+        throw err;
+      }
+    },
   });
 }
 

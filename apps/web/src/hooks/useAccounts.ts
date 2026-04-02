@@ -1,16 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { getOfflineAccounts } from "@/lib/offline/computed";
 import type { Account } from "@dompetaing/shared";
 
 // ── Query Keys ──
 const ACCOUNTS_KEY = ["accounts"] as const;
 const accountKey = (id: string) => ["accounts", id] as const;
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useAccounts() {
   return useQuery<Account[]>({
     queryKey: ACCOUNTS_KEY,
-    queryFn: () => api.get<Account[]>("/accounts"),
+    queryFn: async () => {
+      try {
+        return await api.get<Account[]>("/accounts");
+      } catch (err) {
+        if (!navigator.onLine) {
+          return (await getOfflineAccounts()) as unknown as Account[];
+        }
+        throw err;
+      }
+    },
   });
 }
 

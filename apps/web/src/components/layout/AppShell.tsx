@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { OfflineBanner } from "./OfflineBanner";
 import { Toaster } from "@/components/ui/Toast";
 import { Modal } from "@/components/ui/Modal";
 import { TransactionForm } from "@/components/transaction/TransactionForm";
@@ -44,6 +45,7 @@ function GlobalAddTransactionModal() {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-dvh flex flex-col bg-[#F7F6F3] dark:bg-[#111210] max-w-md mx-auto relative">
+      <OfflineBanner />
       <main className="flex-1 content-with-nav overflow-y-auto">
         {children}
       </main>

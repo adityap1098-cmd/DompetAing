@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   BrowserRouter,
@@ -35,18 +36,30 @@ import { useAuth } from "@/hooks/useAuth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { DashboardSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ApiError } from "@/lib/api";
+import { createIDBPersister } from "@/lib/offline/persister";
+import { initNetworkListeners } from "@/lib/offline";
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30 * 1000,
+      gcTime: 1000 * 60 * 60 * 24, // 24h — keep cache for offline use
       retry: (failureCount, error) => {
         if (error instanceof ApiError && error.status === 401) return false;
+        // Don't retry when offline
+        if (!navigator.onLine) return false;
         return failureCount < 2;
       },
+      // When offline, don't refetch on window focus / reconnect — serve from cache
+      networkMode: "offlineFirst",
+    },
+    mutations: {
+      networkMode: "offlineFirst",
     },
   },
 });
+
+const persister = createIDBPersister();
 
 // ── PIN Lock Screen ──
 const PIN_SESSION_KEY = "da_pin_unlocked";
@@ -59,6 +72,11 @@ function ProtectedLayout() {
   const [pinUnlocked, setPinUnlocked] = useState(
     () => sessionStorage.getItem(PIN_SESSION_KEY) === "1"
   );
+
+  // Initialize offline network listeners
+  useEffect(() => {
+    initNetworkListeners();
+  }, []);
 
   // When user data loads, check if PIN lock should show
   const pinRequired = !isLoading && isAuthenticated && (user as (typeof user & { pin_set?: boolean }))?.pin_set && !pinUnlocked;
@@ -146,11 +164,18 @@ function PlaceholderPage({ title, icon }: { title: string; icon: string }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        buster: "", // no cache-busting — we want to keep cache across sessions
+      }}
+    >
       <BrowserRouter>
         <AppRoutes />
       </BrowserRouter>
       <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }

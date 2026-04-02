@@ -1,5 +1,6 @@
 import type { Transaction } from "@dompetaing/shared";
 import { formatRupiah } from "@/lib/format";
+import { OfflineBadge } from "@/components/ui/OfflineBadge";
 
 interface TransactionItemProps {
   transaction: Transaction;
@@ -65,6 +66,9 @@ export function TransactionItem({
           {t.sub_category ? ` · ${t.sub_category.name}` : ""}
           {t.type !== "transfer" ? ` · ${t.account?.name ?? ""}` : ""}
         </p>
+        {(t as Transaction & { _offline?: boolean })._offline && (
+          <OfflineBadge className="mt-0.5" />
+        )}
       </div>
 
       {/* Amount + date */}

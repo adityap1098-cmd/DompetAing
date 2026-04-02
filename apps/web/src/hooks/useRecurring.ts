@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { offlineDb } from "@/lib/offline/db";
 import type { RecurringTransaction } from "@dompetaing/shared";
 
 // ── Types ──
@@ -29,11 +30,36 @@ export interface CreateRecurringInput {
 // ── Query Keys ──
 const RECURRING_KEY = ["recurring"] as const;
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useRecurring() {
   return useQuery<RecurringListResponse>({
     queryKey: RECURRING_KEY,
-    queryFn: () => api.get<RecurringListResponse>("/recurring"),
+    queryFn: async () => {
+      try {
+        return await api.get<RecurringListResponse>("/recurring");
+      } catch (err) {
+        if (!navigator.onLine) {
+          const items = await offlineDb.recurring.toArray();
+          let totalExpense = 0;
+          let totalIncome = 0;
+          for (const r of items) {
+            if (r.is_active) {
+              const amount = r.monthly_total || Number(r.amount) || 0;
+              if (r.type === "expense") totalExpense += amount;
+              if (r.type === "income") totalIncome += amount;
+            }
+          }
+          return {
+            items: items as unknown as RecurringTransaction[],
+            summary: {
+              total_expense_monthly: totalExpense,
+              total_income_monthly: totalIncome,
+            },
+          };
+        }
+        throw err;
+      }
+    },
   });
 }
 

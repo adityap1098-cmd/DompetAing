@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, ApiError, offlineMutate } from "@/lib/api";
+import { offlineDb } from "@/lib/offline/db";
+import { getOfflineTransactions } from "@/lib/offline/computed";
 import type { Transaction, TransactionType } from "@dompetaing/shared";
 
 // ── Types ──
@@ -67,12 +69,34 @@ export interface TransactionTotalResponse {
   total_amount: number;
 }
 
-// ── Fetch Hooks ──
+// ── Fetch Hooks (with offline fallback) ──
 export function useTransactions(filters: TransactionFilters = {}) {
   return useQuery<TransactionListResponse>({
     queryKey: [...TRANSACTIONS_KEY, filters],
-    queryFn: () =>
-      api.get<TransactionListResponse>(`/transactions${buildQueryString(filters)}`),
+    queryFn: async () => {
+      try {
+        return await api.get<TransactionListResponse>(
+          `/transactions${buildQueryString(filters)}`
+        );
+      } catch (err) {
+        // Offline fallback: serve from IndexedDB
+        if (!navigator.onLine) {
+          const items = await getOfflineTransactions(
+            filters.limit || 50
+          );
+          return {
+            items: items as unknown as Transaction[],
+            meta: {
+              total: items.length,
+              page: 1,
+              limit: filters.limit || 50,
+              has_next: false,
+            },
+          };
+        }
+        throw err;
+      }
+    },
   });
 }
 
@@ -96,12 +120,56 @@ export function useTransaction(id: string) {
   });
 }
 
-// ── Mutation Hooks ──
+// ── Mutation Hooks (with offline queue support) ──
 export function useCreateTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation<TransactionEffects, Error, CreateTransactionInput>({
-    mutationFn: (data) => api.post<TransactionEffects>("/transactions", data),
+    mutationFn: async (data) => {
+      if (!navigator.onLine) {
+        // Queue for later sync + apply locally
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        await offlineMutate({
+          endpoint: "/transactions",
+          method: "POST",
+          payload: data as unknown as Record<string, unknown>,
+          entity: "transaction",
+          action: "create",
+          tempId,
+          localApply: async () => {
+            await offlineDb.transactions.put({
+              id: tempId,
+              user_id: "",
+              amount: data.amount,
+              type: data.type,
+              category_id: data.category_id || null,
+              sub_category_id: data.sub_category_id || null,
+              account_id: data.account_id,
+              to_account_id: data.to_account_id || null,
+              description: data.description,
+              notes: data.notes || null,
+              date: data.date,
+              source: "manual",
+              debt_id: data.debt_id || null,
+              is_verified: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              _offline: true,
+            });
+          },
+        });
+
+        return {
+          transaction: {
+            id: tempId,
+            ...data,
+            _offline: true,
+          } as unknown as Transaction,
+          effects: { account_balance: 0 },
+        };
+      }
+      return api.post<TransactionEffects>("/transactions", data);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
       void queryClient.invalidateQueries({ queryKey: ["accounts"] });
@@ -117,8 +185,34 @@ export function useUpdateTransaction() {
     Error,
     { id: string } & Partial<CreateTransactionInput>
   >({
-    mutationFn: ({ id, ...data }) =>
-      api.put<TransactionEffects>(`/transactions/${id}`, data),
+    mutationFn: async ({ id, ...data }) => {
+      if (!navigator.onLine) {
+        await offlineMutate({
+          endpoint: `/transactions/${id}`,
+          method: "PUT",
+          payload: data as unknown as Record<string, unknown>,
+          entity: "transaction",
+          action: "update",
+          entityId: id,
+          localApply: async () => {
+            const existing = await offlineDb.transactions.get(id);
+            if (existing) {
+              await offlineDb.transactions.update(id, {
+                ...data,
+                updated_at: new Date().toISOString(),
+                _offline: true,
+              });
+            }
+          },
+        });
+
+        return {
+          transaction: { id, ...data, _offline: true } as unknown as Transaction,
+          effects: { account_balance: 0 },
+        };
+      }
+      return api.put<TransactionEffects>(`/transactions/${id}`, data);
+    },
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
       void queryClient.invalidateQueries({ queryKey: txnKey(result.transaction.id) });
@@ -131,7 +225,22 @@ export function useDeleteTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation<void, Error, string>({
-    mutationFn: (id) => api.delete<void>(`/transactions/${id}`),
+    mutationFn: async (id) => {
+      if (!navigator.onLine) {
+        await offlineMutate({
+          endpoint: `/transactions/${id}`,
+          method: "DELETE",
+          entity: "transaction",
+          action: "delete",
+          entityId: id,
+          localApply: async () => {
+            await offlineDb.transactions.delete(id);
+          },
+        });
+        return;
+      }
+      return api.delete<void>(`/transactions/${id}`);
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
       void queryClient.invalidateQueries({ queryKey: ["accounts"] });

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "@/lib/api";
 import { logout } from "@/lib/auth";
+import { clearOfflineData } from "@/lib/offline";
 import type { User } from "@dompetaing/shared";
 
 export function useAuth() {
@@ -11,13 +12,19 @@ export function useAuth() {
     queryFn: () => api.get<User>("/auth/me"),
     retry: (failureCount, err) => {
       if (err instanceof ApiError && err.status === 401) return false;
+      // Don't retry when offline — serve from cache
+      if (!navigator.onLine) return false;
       return failureCount < 2;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const logoutMutation = useMutation({
-    mutationFn: logout,
+    mutationFn: async () => {
+      // Clear offline data before logout
+      await clearOfflineData().catch(() => {});
+      return logout();
+    },
     onSuccess: () => {
       queryClient.clear();
       window.location.href = "/login";
