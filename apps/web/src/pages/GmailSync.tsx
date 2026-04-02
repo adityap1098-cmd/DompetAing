@@ -433,10 +433,11 @@ function PendingItem({
           </button>
           <button
             onClick={() => {
-              const payload: ApprovePayload = { ...form };
-              if (form.sub_category_id) {
-                (payload as ApprovePayload & { sub_category_id?: string }).sub_category_id = form.sub_category_id;
-              }
+              const payload: ApprovePayload = {
+                ...form,
+                category_id: form.category_id || undefined,
+                sub_category_id: form.sub_category_id || undefined,
+              };
               onApprove(payload);
               setIsEditing(false);
             }}
@@ -462,7 +463,14 @@ function PendingItem({
             Lewati
           </button>
           <button
-            onClick={() => onApprove(form)}
+            onClick={() => {
+              const payload: ApprovePayload = {
+                ...form,
+                category_id: form.category_id || undefined,
+                sub_category_id: form.sub_category_id || undefined,
+              };
+              onApprove(payload);
+            }}
             disabled={!form.account_id || !form.amount || isApproving}
             className="flex-[2] py-2.5 rounded-[10px] text-white text-[11px] font-semibold disabled:opacity-50"
             style={{ backgroundColor: "var(--accent)" }}
