@@ -1,5 +1,5 @@
-import { NavLink } from "react-router-dom";
-import { useAddTransactionStore } from "@/store/addTransaction";
+import { NavLink, useLocation } from "react-router-dom";
+import { useGlobalAddStore } from "@/store/globalAdd";
 
 function HomeIcon() {
   return (
@@ -50,7 +50,20 @@ const navItems = [
 ];
 
 export function BottomNav() {
-  const openAddTransaction = useAddTransactionStore((s) => s.open);
+  const { pathname } = useLocation();
+  const openGlobal = useGlobalAddStore((s) => s.open);
+
+  // Context-aware: determine which form to open based on current page
+  function handleAdd() {
+    if (pathname.startsWith("/budget")) {
+      openGlobal("budget");
+    } else if (pathname.startsWith("/debts")) {
+      openGlobal("debt");
+    } else {
+      // Default: transaction (for /dashboard, /transactions, and all other pages)
+      openGlobal("transaction");
+    }
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[rgba(255,255,255,0.94)] dark:bg-[rgba(13,14,11,0.96)] backdrop-blur-xl border-t border-[rgba(0,0,0,0.07)] dark:border-[rgba(255,255,255,0.07)]">
@@ -78,12 +91,12 @@ export function BottomNav() {
           </NavLink>
         ))}
 
-        {/* Center FAB — opens global add transaction modal */}
+        {/* Center FAB — context-aware */}
         <div className="flex flex-col items-center gap-[3px] pb-1">
           <button
-            onClick={openAddTransaction}
+            onClick={handleAdd}
             className="w-[46px] h-[46px] bg-accent-500 dark:bg-accent-dark rounded-full flex items-center justify-center -mt-[18px] shadow-[0_4px_14px_rgba(46,125,90,0.38)] active:scale-95 transition-transform"
-            aria-label="Tambah transaksi"
+            aria-label="Tambah"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" className="w-5 h-5">
               <line x1="12" y1="5" x2="12" y2="19" />

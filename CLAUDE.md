@@ -30,3 +30,12 @@ Dashboard empty states WAJIB selalu ada untuk:
 
 JANGAN PERNAH hapus empty state saat edit Dashboard.tsx.
 Setiap section di Dashboard HARUS punya 3 state: loading, empty, dan data.
+
+## RULE 6: Tombol + tengah navbar WAJIB context-aware
+Tombol + di tengah BottomNav WAJIB context-aware berdasarkan halaman aktif:
+- **Beranda / Transaksi / halaman lain** → buka TransactionForm
+- **Budget** → buka BudgetForm
+- **Hutang & Piutang** → buka DebtForm
+
+Implementasi: `useGlobalAddStore` di `store/globalAdd.ts`, `BottomNav` cek `pathname`.
+JANGAN ubah behavior ini saat edit BottomNav.tsx, AppShell.tsx, atau halaman lain.

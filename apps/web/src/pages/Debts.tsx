@@ -213,6 +213,17 @@ export function DebtsPage() {
                   : tab === "piutang" ? "Belum ada piutang aktif"
                   : "Catat hutang dan piutang kamu di sini"
                 }
+                action={
+                  tab !== "paid" ? (
+                    <button
+                      onClick={() => setShowAddModal(true)}
+                      className="px-4 py-2 text-white text-[11px] font-bold rounded-[10px] active:scale-95 transition-all"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    >
+                      + Catat Hutang/Piutang
+                    </button>
+                  ) : undefined
+                }
               />
             </div>
           ) : (
