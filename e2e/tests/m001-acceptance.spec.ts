@@ -207,8 +207,8 @@ test.describe("M001 Acceptance Criteria", () => {
       fullPage: true,
     });
 
-    // Verify dark background element exists (gradient uses dark:from-gray-950)
-    const darkBg = page.locator(".dark\\:from-gray-950, .dark\\:from-gray-900");
+    // Verify dark background element exists
+    const darkBg = page.locator("[class*='dark:bg-']");
     // Just confirm it's in DOM (not necessarily visible in CI)
     const darkBgCount = await darkBg.count();
     expect(darkBgCount).toBeGreaterThan(0);

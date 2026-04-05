@@ -11,7 +11,12 @@
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "db:migrate": "turbo db:migrate",
-    "db:seed": "turbo db:seed"
+    "db:seed": "turbo db:seed",
+    "test": "turbo test",
+    "test:api": "cd apps/api && npx vitest run",
+    "test:web": "cd apps/web && npx vitest run",
+    "test:e2e": "cd e2e && npx playwright test",
+    "test:all": "npm run test:api && npm run test:web"
   },
   "devDependencies": {
     "turbo": "^2.3.3",
