@@ -17,14 +17,62 @@ export interface DailyBreakdown {
   expense: number;
 }
 
+export interface TopTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  category: { id: string | null; name: string; icon: string; color: string };
+  account: { id: string; name: string; icon: string } | null;
+}
+
+export interface BudgetVsActual {
+  category: { id: string | null; name: string; icon: string; color: string };
+  budget: number;
+  spent: number;
+  remaining: number;
+  percentage: number;
+}
+
+export interface AccountSpending {
+  account: { id: string; name: string; icon: string; color: string; type: string };
+  amount: number;
+  percentage: number;
+}
+
+export interface MonthComparison {
+  prev_income: number;
+  prev_expense: number;
+  income_change: number;
+  expense_change: number;
+  prev_savings: number;
+  prev_transaction_count: number;
+}
+
+export interface MonthlyTrend {
+  labels: string[];
+  income: number[];
+  expense: number[];
+  savings: number[];
+}
+
 export interface MonthlyReport {
   period: { month: number; year: number };
   income: number;
   expense: number;
   savings: number;
+  saving_rate: number;
+  comparison: MonthComparison;
   expense_by_category: CategoryBreakdown[];
   income_by_category: CategoryBreakdown[];
   daily_breakdown: DailyBreakdown[];
+  top_transactions: TopTransaction[];
+  budget_vs_actual: BudgetVsActual[];
+  per_account_spending: AccountSpending[];
+  daily_average: number;
+  busiest_day: { date: string; amount: number } | null;
+  total_transaction_count: number;
+  monthly_trend: MonthlyTrend;
 }
 
 export interface TrendReport {
@@ -103,7 +151,6 @@ export async function downloadExport(
   }
 
   if (format === "pdf") {
-    // Open HTML in new window — user prints as PDF
     const html = await res.text();
     const win = window.open("", "_blank");
     if (win) {
