@@ -115,7 +115,6 @@ export function DebtForm({ debt, onSubmit, onCancel, loading }: DebtFormProps) {
           maxLength={100}
           required
           className={inputField}
-          autoFocus
         />
       </div>
 

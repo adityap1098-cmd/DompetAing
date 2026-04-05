@@ -149,7 +149,6 @@ export function BudgetForm({
             onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
             placeholder="0"
             className={inputField + " pl-10 font-mono font-semibold"}
-            autoFocus
           />
         </div>
       </div>
