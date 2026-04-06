@@ -80,6 +80,15 @@ export function DashboardPage() {
   const totalIncome = (incomeData?.items ?? []).reduce((s, t) => s + t.amount, 0);
   const totalExpense = (expenseData?.items ?? []).reduce((s, t) => s + t.amount, 0);
 
+  // ── Today's totals ──
+  const todayStr = `${year}-${String(month).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const todayIncome = (incomeData?.items ?? [])
+    .filter((t) => t.date.slice(0, 10) === todayStr)
+    .reduce((s, t) => s + t.amount, 0);
+  const todayExpense = (expenseData?.items ?? [])
+    .filter((t) => t.date.slice(0, 10) === todayStr)
+    .reduce((s, t) => s + t.amount, 0);
+
   const { data: budgetData, isLoading: budgetLoading } = useBudgets(month, year);
   const budgets = budgetData?.budgets ?? [];
 
@@ -233,6 +242,31 @@ export function DashboardPage() {
             </div>
           )}
         </>
+
+        {/* ── Hari Ini ── */}
+        <div className="flex items-center justify-between px-[17px] pt-2 pb-2">
+          <p className="text-[12px] font-bold text-[#1A1917] dark:text-[#F0EEE9]">Hari Ini</p>
+        </div>
+        <div className="mx-[17px] grid grid-cols-2 gap-2 mb-3">
+          <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs">↑</span>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-[#9E9B98] dark:text-[#4A4948]">Masuk Hari Ini</p>
+            </div>
+            <p className="font-mono text-[15px] font-bold text-[#1E8A5A] dark:text-[#4CAF7A] leading-tight">
+              {formatAmount(todayIncome)}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs">↓</span>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-[#9E9B98] dark:text-[#4A4948]">Keluar Hari Ini</p>
+            </div>
+            <p className="font-mono text-[15px] font-bold text-[#C94A1C] dark:text-[#E87340] leading-tight">
+              {formatAmount(todayExpense)}
+            </p>
+          </div>
+        </div>
 
         {/* ── Transaksi Terbaru ── */}
         <div className="flex items-center justify-between px-[17px] pt-2 pb-2">
