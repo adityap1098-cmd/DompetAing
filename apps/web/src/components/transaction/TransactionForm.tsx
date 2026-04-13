@@ -1,11 +1,44 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AmountNumpad } from "@/components/ui/AmountNumpad";
 import { CategoryPicker } from "@/components/ui/CategoryPicker";
 import { AccountPicker } from "@/components/ui/AccountPicker";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useCategories } from "@/hooks/useCategories";
-import type { Transaction, TransactionType } from "@dompetaing/shared";
+import type { Transaction, TransactionType, Category } from "@dompetaing/shared";
 import type { CreateTransactionInput } from "@/hooks/useTransactions";
+
+// ── Auto-kategorisasi keyword mapping ──
+// Each entry: [regex pattern, target category name (lowercase), target sub-category name (lowercase) | null]
+const KEYWORD_RULES: [RegExp, string, string | null][] = [
+  [/kopi|coffee|starbucks|kenangan|janji\s*jiwa/i, "makanan & minuman", "kopi"],
+  [/makan|nasi|warung|padang|bakso|mie|rice|sarapan|lunch|dinner/i, "makanan & minuman", "makan siang"],
+  [/grab|gojek|gocar|goride|taxi|ojol/i, "transportasi", null],
+  [/bbm|pertamax|pertalite|spbu|shell|bensin|solar/i, "transportasi", "bbm"],
+  [/shopee|tokopedia|lazada|blibli|olshop/i, "belanja", "online"],
+  [/listrik|pln|air|pdam|internet|wifi|indihome/i, "rumah", null],
+  [/pulsa|data|telkomsel|xl|indosat|smartfren/i, "teknologi", null],
+];
+
+function matchKeywordCategory(
+  desc: string,
+  categories: Category[]
+): { categoryId: string; subCategoryId: string } | null {
+  const lower = desc.toLowerCase();
+  for (const [pattern, catName, subName] of KEYWORD_RULES) {
+    if (!pattern.test(lower)) continue;
+    const cat = categories.find((c) => c.name.toLowerCase() === catName);
+    if (!cat) continue;
+    let subId = "";
+    if (subName) {
+      const sub = cat.sub_categories?.find(
+        (s) => s.name.toLowerCase() === subName
+      );
+      if (sub) subId = sub.id;
+    }
+    return { categoryId: cat.id, subCategoryId: subId };
+  }
+  return null;
+}
 
 interface TransactionFormProps {
   transaction?: Transaction;
@@ -51,6 +84,10 @@ export function TransactionForm({
   const [showAccountPicker, setShowAccountPicker] = useState(false);
   const [showToAccountPicker, setShowToAccountPicker] = useState(false);
 
+  // Track if user manually selected category (don't override with auto-suggest)
+  const manualCategoryRef = useRef(!!transaction?.category_id);
+  const descTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { data: accounts } = useAccounts();
   const { data: allCategories } = useCategories();
 
@@ -69,12 +106,32 @@ export function TransactionForm({
     setCategoryId("");
     setSubCategoryId("");
     setToAccountId("");
+    manualCategoryRef.current = false;
   }
 
   function handleCategorySelect(catId: string, subId?: string) {
     setCategoryId(catId);
     setSubCategoryId(subId ?? "");
+    manualCategoryRef.current = true;
   }
+
+  // Auto-kategorisasi: debounce 500ms after description change
+  const handleDescriptionChange = useCallback(
+    (value: string) => {
+      setDescription(value);
+      if (type === "transfer" || manualCategoryRef.current) return;
+      if (descTimerRef.current) clearTimeout(descTimerRef.current);
+      descTimerRef.current = setTimeout(() => {
+        if (!value.trim()) return;
+        const match = matchKeywordCategory(value, categories);
+        if (match) {
+          setCategoryId(match.categoryId);
+          setSubCategoryId(match.subCategoryId);
+        }
+      }, 500);
+    },
+    [type, categories]
+  );
 
   function handleSubmit() {
     const numAmount = Number(amount);
@@ -305,7 +362,7 @@ export function TransactionForm({
           <input
             type="text"
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(e) => handleDescriptionChange(e.target.value)}
             placeholder="Opsional"
             maxLength={255}
             className={inputField}

@@ -110,6 +110,8 @@ function buildWhere(
       OR: [
         { description: { contains: params.search, mode: "insensitive" } },
         { notes: { contains: params.search, mode: "insensitive" } },
+        { category: { name: { contains: params.search, mode: "insensitive" } } },
+        { sub_category: { name: { contains: params.search, mode: "insensitive" } } },
       ],
     });
   }

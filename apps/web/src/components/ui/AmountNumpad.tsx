@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 
 interface AmountNumpadProps {
   value: string;
@@ -8,10 +8,80 @@ interface AmountNumpadProps {
   confirmLabel?: string;
 }
 
+const OPERATORS = new Set(["+", "-", "*", "/"]);
+
+function formatNumber(n: number): string {
+  if (!Number.isFinite(n) || n < 0) return "0";
+  return Math.round(n).toLocaleString("id-ID");
+}
+
+/** Safely evaluate a simple math expression (digits and +−×÷ only) */
+function evalExpression(expr: string): number | null {
+  // Remove all spaces
+  const clean = expr.replace(/\s/g, "");
+  if (!clean) return null;
+
+  // Validate: only digits, operators, and dots allowed
+  if (!/^[\d+\-*/]+$/.test(clean)) return null;
+
+  // Split into tokens
+  const tokens: (number | string)[] = [];
+  let numBuf = "";
+  for (const ch of clean) {
+    if (OPERATORS.has(ch)) {
+      if (!numBuf) return null; // operator at start or double operator
+      tokens.push(Number(numBuf));
+      tokens.push(ch);
+      numBuf = "";
+    } else {
+      numBuf += ch;
+    }
+  }
+  if (!numBuf) return null; // trailing operator
+  tokens.push(Number(numBuf));
+
+  // Evaluate: first pass for * and /, second pass for + and -
+  // First pass: multiply & divide
+  const addSub: (number | string)[] = [];
+  let i = 0;
+  while (i < tokens.length) {
+    if (i + 2 < tokens.length && (tokens[i + 1] === "*" || tokens[i + 1] === "/")) {
+      let acc = tokens[i] as number;
+      while (i + 2 < tokens.length && (tokens[i + 1] === "*" || tokens[i + 1] === "/")) {
+        const op = tokens[i + 1] as string;
+        const right = tokens[i + 2] as number;
+        acc = op === "*" ? acc * right : right !== 0 ? acc / right : 0;
+        i += 2;
+      }
+      addSub.push(acc);
+    } else {
+      addSub.push(tokens[i]);
+    }
+    i++;
+  }
+
+  // Second pass: add & subtract
+  let result = addSub[0] as number;
+  for (let j = 1; j < addSub.length; j += 2) {
+    const op = addSub[j] as string;
+    const val = addSub[j + 1] as number;
+    result = op === "+" ? result + val : result - val;
+  }
+
+  return Number.isFinite(result) ? result : null;
+}
+
+function hasOperator(expr: string): boolean {
+  return /[+\-*/]/.test(expr);
+}
+
 function formatDisplay(raw: string): string {
-  const n = raw.replace(/\D/g, "");
-  if (!n) return "0";
-  return Number(n).toLocaleString("id-ID");
+  if (!raw) return "0";
+  // Format each number segment while keeping operators
+  return raw.replace(/\d+/g, (match) => {
+    const n = Number(match);
+    return n.toLocaleString("id-ID");
+  });
 }
 
 export function AmountNumpad({
@@ -23,34 +93,88 @@ export function AmountNumpad({
 }: AmountNumpadProps) {
   const handleDigit = useCallback(
     (digit: string) => {
-      const current = value.replace(/\D/g, "");
-      // Max 15 digits
-      if (current.length >= 15) return;
-      // Don't allow leading zeros
-      const next = current === "0" || current === "" ? digit : current + digit;
-      onChange(next);
+      // Get the current number segment (after last operator)
+      const lastOpIdx = Math.max(
+        value.lastIndexOf("+"),
+        value.lastIndexOf("-"),
+        value.lastIndexOf("*"),
+        value.lastIndexOf("/")
+      );
+      const currentSegment = lastOpIdx >= 0 ? value.slice(lastOpIdx + 1) : value;
+
+      // Max 15 digits per segment
+      if (currentSegment.length >= 15) return;
+
+      if (!value || value === "0") {
+        onChange(digit);
+      } else {
+        // Don't allow leading zeros in a segment
+        if (currentSegment === "0") {
+          onChange(value.slice(0, -1) + digit);
+        } else {
+          onChange(value + digit);
+        }
+      }
     },
     [value, onChange]
   );
 
   const handleDelete = useCallback(() => {
-    const current = value.replace(/\D/g, "");
-    if (current.length <= 1) {
+    if (value.length <= 1) {
       onChange("");
     } else {
-      onChange(current.slice(0, -1));
+      onChange(value.slice(0, -1));
     }
   }, [value, onChange]);
 
   const handleTripleZero = useCallback(() => {
-    const current = value.replace(/\D/g, "");
-    if (!current || current === "0") return;
-    if (current.length >= 13) return;
-    onChange(current + "000");
+    if (!value || value === "0") return;
+    // Don't add 000 right after an operator
+    const lastChar = value[value.length - 1];
+    if (OPERATORS.has(lastChar)) return;
+
+    const lastOpIdx = Math.max(
+      value.lastIndexOf("+"),
+      value.lastIndexOf("-"),
+      value.lastIndexOf("*"),
+      value.lastIndexOf("/")
+    );
+    const currentSegment = lastOpIdx >= 0 ? value.slice(lastOpIdx + 1) : value;
+    if (currentSegment.length >= 13) return;
+
+    onChange(value + "000");
   }, [value, onChange]);
 
+  const handleOperator = useCallback(
+    (op: string) => {
+      if (!value) return;
+      const lastChar = value[value.length - 1];
+      // Replace last operator if pressing a different one
+      if (OPERATORS.has(lastChar)) {
+        onChange(value.slice(0, -1) + op);
+      } else {
+        onChange(value + op);
+      }
+    },
+    [value, onChange]
+  );
+
+  const showCalc = hasOperator(value);
+  const calcResult = useMemo(() => (showCalc ? evalExpression(value) : null), [showCalc, value]);
+
+  // When confirming, resolve expression to final number
+  const handleConfirm = useCallback(() => {
+    if (showCalc && calcResult !== null && calcResult > 0) {
+      onChange(String(Math.round(calcResult)));
+    }
+    // Small delay to let state update before parent reads it
+    setTimeout(() => onConfirm?.(), 10);
+  }, [showCalc, calcResult, onChange, onConfirm]);
+
   const displayValue = formatDisplay(value);
-  const numericValue = Number(value.replace(/\D/g, "") || "0");
+  const numericValue = showCalc
+    ? (calcResult ?? 0)
+    : Number(value.replace(/\D/g, "") || "0");
 
   const digitClass = [
     "flex items-center justify-center rounded-full",
@@ -69,6 +193,16 @@ export function AmountNumpad({
     "transition-all duration-100 active:scale-90",
   ].join(" ");
 
+  const operatorClass = [
+    "flex items-center justify-center rounded-full",
+    "w-[42px] h-[42px]",
+    "text-[18px] font-bold select-none",
+    "transition-all duration-100 active:scale-90",
+    "bg-[var(--accent)]/15 text-[var(--accent)]",
+    "hover:bg-[var(--accent)]/25",
+    "active:bg-[var(--accent)]/35",
+  ].join(" ");
+
   const keys = [
     "1", "2", "3",
     "4", "5", "6",
@@ -79,21 +213,43 @@ export function AmountNumpad({
   return (
     <div className="flex flex-col items-center gap-3">
       {/* Amount display */}
-      <div className="flex items-baseline justify-center gap-1.5 py-3 px-4 min-h-[56px]">
-        <span className="font-mono text-[18px] font-medium text-[#9E9B98] dark:text-[#4A4948]">
-          Rp
-        </span>
-        <span
-          className={[
-            "font-mono font-bold text-center transition-all",
-            numericValue > 0
-              ? "text-[#1A1917] dark:text-[#F0EEE9]"
-              : "text-[#C8C6C2] dark:text-[#3A3938]",
-            displayValue.length > 12 ? "text-[22px]" : displayValue.length > 8 ? "text-[26px]" : "text-[32px]",
-          ].join(" ")}
-        >
-          {displayValue}
-        </span>
+      <div className="flex flex-col items-center justify-center py-3 px-4 min-h-[56px]">
+        <div className="flex items-baseline justify-center gap-1.5">
+          <span className="font-mono text-[18px] font-medium text-[#9E9B98] dark:text-[#4A4948]">
+            Rp
+          </span>
+          <span
+            className={[
+              "font-mono font-bold text-center transition-all",
+              numericValue > 0
+                ? "text-[#1A1917] dark:text-[#F0EEE9]"
+                : "text-[#C8C6C2] dark:text-[#3A3938]",
+              displayValue.length > 16 ? "text-[18px]" : displayValue.length > 12 ? "text-[22px]" : displayValue.length > 8 ? "text-[26px]" : "text-[32px]",
+            ].join(" ")}
+          >
+            {displayValue}
+          </span>
+        </div>
+        {/* Calculator result preview */}
+        {showCalc && calcResult !== null && (
+          <div className="mt-1 text-[14px] font-mono font-semibold" style={{ color: "var(--accent)" }}>
+            = Rp {formatNumber(calcResult)}
+          </div>
+        )}
+      </div>
+
+      {/* Operator row */}
+      <div className="flex items-center justify-center gap-3 mb-1">
+        {["+", "-", "*", "/"].map((op) => (
+          <button
+            key={op}
+            type="button"
+            onClick={() => handleOperator(op)}
+            className={operatorClass}
+          >
+            {op === "*" ? "×" : op === "/" ? "÷" : op}
+          </button>
+        ))}
       </div>
 
       {/* Numpad grid */}
@@ -151,7 +307,7 @@ export function AmountNumpad({
       {onConfirm && (
         <button
           type="button"
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={confirmDisabled || numericValue <= 0}
           className={[
             "w-full max-w-[240px] py-3 rounded-[14px] text-[14px] font-bold",
