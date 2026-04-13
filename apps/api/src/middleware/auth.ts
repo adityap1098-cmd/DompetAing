@@ -1,7 +1,7 @@
 import type { Context, Next } from "hono";
 import { prisma } from "../lib/db.js";
 import { getSession } from "../lib/session.js";
-import type { User } from "@prisma/client";
+type User = any;
 
 declare module "hono" {
   interface ContextVariableMap {

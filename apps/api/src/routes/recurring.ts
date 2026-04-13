@@ -102,7 +102,7 @@ recurring.get("/", async (c) => {
   const items = rows.map((r) =>
     serializeRecurring(
       r as unknown as RawRecurring,
-      catMap.get(r.category_id ?? "") ?? null,
+      (catMap.get(r.category_id ?? "") ?? null) as any,
       accountMap.get(r.account_id) ?? null
     )
   );
@@ -136,7 +136,7 @@ recurring.get("/:id", async (c) => {
     ok(
       serializeRecurring(
         row as unknown as RawRecurring,
-        catMap.get(row.category_id ?? "") ?? null,
+        (catMap.get(row.category_id ?? "") ?? null) as any,
         accountMap.get(row.account_id) ?? null
       )
     )
@@ -176,7 +176,7 @@ recurring.post("/", async (c) => {
     ok(
       serializeRecurring(
         row as unknown as RawRecurring,
-        catMap.get(row.category_id ?? "") ?? null,
+        (catMap.get(row.category_id ?? "") ?? null) as any,
         accountMap.get(row.account_id) ?? null
       )
     ),
@@ -225,7 +225,7 @@ recurring.put("/:id", async (c) => {
     ok(
       serializeRecurring(
         row as unknown as RawRecurring,
-        catMap.get(row.category_id ?? "") ?? null,
+        (catMap.get(row.category_id ?? "") ?? null) as any,
         accountMap.get(row.account_id) ?? null
       )
     )
@@ -251,7 +251,7 @@ recurring.patch("/:id/toggle", async (c) => {
     ok(
       serializeRecurring(
         row as unknown as RawRecurring,
-        catMap.get(row.category_id ?? "") ?? null,
+        (catMap.get(row.category_id ?? "") ?? null) as any,
         accountMap.get(row.account_id) ?? null
       )
     )

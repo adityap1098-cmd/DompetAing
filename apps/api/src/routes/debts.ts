@@ -195,7 +195,7 @@ debts.patch("/:id/pay", async (c) => {
     data: { is_paid: true, paid_at: new Date() },
   });
 
-  let transaction = null;
+  let transaction: any = null;
   if (auto_record && account_id) {
     // Verify account belongs to user
     const account = await prisma.account.findFirst({
@@ -271,7 +271,7 @@ debts.patch("/:id/unpay", async (c) => {
   });
 
   // Recompute affected account balances
-  const affectedAccountIds = [...new Set(linkedTxns.map((t) => t.account_id))];
+  const affectedAccountIds = [...new Set(linkedTxns.map((t) => t.account_id))] as string[];
   await Promise.all(affectedAccountIds.map((aid) => computeAccountBalance(aid)));
 
   return c.json(
