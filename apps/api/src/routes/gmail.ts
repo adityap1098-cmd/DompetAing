@@ -256,8 +256,8 @@ gmail.get("/pending", async (c) => {
       : Promise.resolve([]),
   ]);
 
-  const catMap = new Map(categories.map((c) => [c.id, c]));
-  const accMap = new Map(accounts.map((a) => [a.id, a]));
+  const catMap = new Map(categories.map((c) => [c.id, c] as const));
+  const accMap = new Map(accounts.map((a) => [a.id, a] as const));
 
   return c.json(
     ok(

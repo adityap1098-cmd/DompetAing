@@ -83,8 +83,8 @@ async function resolveRefs(rows: RawRecurring[]) {
     }),
   ]);
 
-  const catMap = new Map(categories.map((c) => [c.id, c]));
-  const accountMap = new Map(accounts.map((a) => [a.id, a]));
+  const catMap = new Map(categories.map((c) => [c.id, c] as const));
+  const accountMap = new Map(accounts.map((a) => [a.id, a] as const));
   return { catMap, accountMap };
 }
 
