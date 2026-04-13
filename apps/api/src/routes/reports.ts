@@ -334,8 +334,8 @@ reports.get("/trend", requireFeature("full_reports"), async (c) => {
       _sum: { amount: true },
     });
 
-    const inc = Number(agg.find((a) => a.type === "income")?._sum.amount ?? 0);
-    const exp = Number(agg.find((a) => a.type === "expense")?._sum.amount ?? 0);
+    const inc = Number(agg.find((a: any) => a.type === "income")?._sum.amount ?? 0);
+    const exp = Number(agg.find((a: any) => a.type === "expense")?._sum.amount ?? 0);
 
     labels.push(`${MONTH_SHORT[m - 1]} '${String(y).slice(2)}`);
     income.push(inc);
@@ -366,8 +366,8 @@ reports.get("/yearly", requireFeature("full_reports"), async (c) => {
         _sum: { amount: true },
       });
 
-      const inc = Number(agg.find((a) => a.type === "income")?._sum.amount ?? 0);
-      const exp = Number(agg.find((a) => a.type === "expense")?._sum.amount ?? 0);
+      const inc = Number(agg.find((a: any) => a.type === "income")?._sum.amount ?? 0);
+      const exp = Number(agg.find((a: any) => a.type === "expense")?._sum.amount ?? 0);
 
       return { month, label: MONTH_SHORT[i], income: inc, expense: exp, savings: inc - exp };
     })

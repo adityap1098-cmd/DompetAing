@@ -288,7 +288,7 @@ subscription.get("/payments", requireAuth, async (c) => {
     success: true,
     error: null,
     data: {
-      payments: payments.map((p) => ({
+      payments: payments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),
       })),

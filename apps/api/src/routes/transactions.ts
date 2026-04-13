@@ -179,7 +179,7 @@ transactions.get("/", async (c) => {
 
   return c.json(
     ok({
-      items: rows.map((r) => serializeTransaction(r as unknown as RawTxn)),
+      items: rows.map((r: any) => serializeTransaction(r as unknown as RawTxn)),
       meta: { total, page, limit, has_next: page * limit < total },
     })
   );
