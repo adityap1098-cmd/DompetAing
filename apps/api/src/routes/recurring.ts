@@ -103,7 +103,7 @@ recurring.get("/", async (c) => {
     serializeRecurring(
       r as unknown as RawRecurring,
       (catMap.get(r.category_id ?? "") ?? null) as any,
-      accountMap.get(r.account_id) ?? null
+      (accountMap.get(r.account_id) ?? null) as any
     )
   );
 
@@ -137,7 +137,7 @@ recurring.get("/:id", async (c) => {
       serializeRecurring(
         row as unknown as RawRecurring,
         (catMap.get(row.category_id ?? "") ?? null) as any,
-        accountMap.get(row.account_id) ?? null
+        (accountMap.get(row.account_id) ?? null) as any
       )
     )
   );
@@ -177,7 +177,7 @@ recurring.post("/", async (c) => {
       serializeRecurring(
         row as unknown as RawRecurring,
         (catMap.get(row.category_id ?? "") ?? null) as any,
-        accountMap.get(row.account_id) ?? null
+        (accountMap.get(row.account_id) ?? null) as any
       )
     ),
     201
@@ -226,7 +226,7 @@ recurring.put("/:id", async (c) => {
       serializeRecurring(
         row as unknown as RawRecurring,
         (catMap.get(row.category_id ?? "") ?? null) as any,
-        accountMap.get(row.account_id) ?? null
+        (accountMap.get(row.account_id) ?? null) as any
       )
     )
   );
@@ -252,7 +252,7 @@ recurring.patch("/:id/toggle", async (c) => {
       serializeRecurring(
         row as unknown as RawRecurring,
         (catMap.get(row.category_id ?? "") ?? null) as any,
-        accountMap.get(row.account_id) ?? null
+        (accountMap.get(row.account_id) ?? null) as any
       )
     )
   );
