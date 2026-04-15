@@ -85,7 +85,7 @@ export function AccountPicker({
               <div className="flex items-center gap-2 shrink-0">
                 {typeof account.balance === "number" && (
                   <span className="font-mono text-[12px] font-medium text-[#6B6864] dark:text-[#9E9B96]">
-                    {formatRupiah(account.balance, { compact: true })}
+                    {formatRupiah(account.balance)}
                   </span>
                 )}
                 {isSelected && (

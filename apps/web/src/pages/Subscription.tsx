@@ -378,7 +378,7 @@ function PriceCard({
             {type === "monthly" ? "Premium Bulanan" : "Premium Tahunan"}
           </p>
           <p className="font-mono text-[20px] font-extrabold text-[#1A1917] dark:text-[#F0EEE9]">
-            {formatRupiah(price, { compact: false })}
+            {formatRupiah(price)}
             <span className="text-[11px] font-normal text-[#9E9B98] dark:text-[#4A4948] ml-1">
               {label}
             </span>

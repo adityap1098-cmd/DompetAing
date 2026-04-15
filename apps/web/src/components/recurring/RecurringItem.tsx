@@ -97,10 +97,10 @@ export function RecurringItem({ item, onClick }: RecurringItemProps) {
               : "text-[#9E9B98] dark:text-[#4A4948]",
           ].join(" ")}
         >
-          {formatRupiah(item.amount, { compact: true })}
+          {formatRupiah(item.amount)}
         </p>
         <p className="text-[9px] text-[#9E9B98] dark:text-[#4A4948]">
-          ~{formatRupiah(item.monthly_total, { compact: true })}/bln
+          ~{formatRupiah(item.monthly_total)}/bln
         </p>
       </div>
     </button>

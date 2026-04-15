@@ -74,7 +74,7 @@ export function TransactionItem({
       {/* Amount + date */}
       <div className="text-right shrink-0">
         <p className={`font-mono text-[11px] font-semibold ${amountColor}`}>
-          {sign}{formatRupiah(t.amount, { compact: true })}
+          {sign}{formatRupiah(t.amount)}
         </p>
         <p className="text-[8px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5">
           {new Date(t.date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}

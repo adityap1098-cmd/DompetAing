@@ -52,7 +52,7 @@ export function DebtItem({ debt, onClick }: DebtItemProps) {
           : isHutang ? "text-[#C94A1C] dark:text-[#E87340]"
           : "text-[#1E8A5A] dark:text-[#4CAF7A]",
         ].join(" ")}>
-          {formatRupiah(debt.amount, { compact: true })}
+          {formatRupiah(debt.amount)}
         </p>
         <p className="text-[8px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5">
           {debt.is_paid ? "✓ Lunas" : "Belum lunas"}

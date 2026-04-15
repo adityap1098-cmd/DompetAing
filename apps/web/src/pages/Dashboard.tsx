@@ -167,13 +167,13 @@ export function DashboardPage() {
             <div className="flex-1 bg-white/[0.11] rounded-[10px] px-2.5 py-2">
               <p className="text-[8px] opacity-70 mb-0.5">Pemasukan</p>
               <p className="font-mono text-[12px] font-semibold">
-                {formatAmount(totalIncome, { compact: true })}
+                {formatAmount(totalIncome)}
               </p>
             </div>
             <div className="flex-1 bg-white/[0.11] rounded-[10px] px-2.5 py-2">
               <p className="text-[8px] opacity-70 mb-0.5">Pengeluaran</p>
               <p className="font-mono text-[12px] font-semibold">
-                {formatAmount(totalExpense, { compact: true })}
+                {formatAmount(totalExpense)}
               </p>
             </div>
           </div>
@@ -226,7 +226,7 @@ export function DashboardPage() {
                       {account.name}
                     </p>
                     <p className="font-mono text-[10px] font-medium text-[#6B6864] dark:text-[#9E9B96] truncate mt-0.5">
-                      {formatAmount(account.balance, { compact: true })}
+                      {formatAmount(account.balance)}
                     </p>
                   </div>
                 </Link>
@@ -333,7 +333,7 @@ export function DashboardPage() {
                         </span>
                       </div>
                       <span className="font-mono text-[11px] font-semibold text-[#6B6864] dark:text-[#9E9B96]">
-                        {formatRupiah(b.spent, { compact: true })} / {formatRupiah(b.amount, { compact: true })}
+                        {formatRupiah(b.spent)} / {formatRupiah(b.amount)}
                       </span>
                     </div>
                     <div className="h-1.5 bg-[#F0EEE9] dark:bg-[#242522] rounded-full overflow-hidden">
@@ -386,7 +386,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <p className="font-mono text-[12px] font-semibold text-[#C94A1C] dark:text-[#E87340]">
-                    {formatAmount(debtSummary.total_hutang, { compact: true })}
+                    {formatAmount(debtSummary.total_hutang)}
                   </p>
                 </div>
               )}
@@ -400,7 +400,7 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <p className="font-mono text-[12px] font-semibold text-[#1E8A5A] dark:text-[#4CAF7A]">
-                    {formatAmount(debtSummary.total_piutang, { compact: true })}
+                    {formatAmount(debtSummary.total_piutang)}
                   </p>
                 </div>
               )}

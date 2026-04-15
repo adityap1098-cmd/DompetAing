@@ -54,7 +54,7 @@ export function AccountCard({ account, onClick, onEdit, onDelete }: AccountCardP
             "font-mono text-[13px] font-semibold",
             account.balance >= 0 ? "text-[#1A1917] dark:text-[#F0EEE9]" : "text-[#C94A1C] dark:text-[#E87340]",
           ].join(" ")}>
-            {formatAmount(account.balance, { compact: true })}
+            {formatAmount(account.balance)}
           </p>
         </div>
       </div>

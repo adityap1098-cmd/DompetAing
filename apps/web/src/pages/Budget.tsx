@@ -90,7 +90,7 @@ function BudgetItem({
               {isExceeded && <span className="text-[10px] font-bold text-[#C94A1C] dark:text-[#E87340]">Melewati!</span>}
             </div>
             <p className="font-mono text-[11px] font-semibold" style={{ color: barColor }}>
-              {formatRupiah(budget.spent, { compact: true })} / {formatRupiah(budget.amount, { compact: true })}
+              {formatRupiah(budget.spent)} / {formatRupiah(budget.amount)}
             </p>
           </div>
           <ProgressBar percentage={budget.percentage} color={barColor} />
@@ -134,7 +134,7 @@ function BudgetItem({
                           <div className="h-full rounded-full" style={{ width: `${Math.min(sub.percentage, 100)}%`, backgroundColor: budget.category.color }} />
                         </div>
                         <p className="font-mono text-[10px] font-semibold text-[#6B6864] dark:text-[#9E9B96] w-16 text-right shrink-0">
-                          {formatRupiah(sub.spent, { compact: true })}
+                          {formatRupiah(sub.spent)}
                         </p>
                       </div>
                     ))}
@@ -154,7 +154,7 @@ function BudgetItem({
                           </p>
                         </div>
                         <p className="font-mono text-[10px] font-semibold text-[#C94A1C] dark:text-[#E87340] ml-2 shrink-0">
-                          -{formatRupiah(txn.amount, { compact: true })}
+                          -{formatRupiah(txn.amount)}
                         </p>
                       </div>
                     ))}
@@ -358,13 +358,13 @@ export function BudgetPage() {
                   <div className="flex justify-between">
                     <span className="text-[10px] text-[#6B6864] dark:text-[#9E9B96]">Total</span>
                     <span className="font-mono text-[11px] font-semibold text-[#1A1917] dark:text-[#F0EEE9]">
-                      {formatRupiah(data?.total_budget ?? 0, { compact: true })}
+                      {formatRupiah(data?.total_budget ?? 0)}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[10px] text-[#6B6864] dark:text-[#9E9B96]">Terpakai</span>
                     <span className="font-mono text-[11px] font-semibold" style={{ color: overallColor }}>
-                      {formatRupiah(data?.total_spent ?? 0, { compact: true })}
+                      {formatRupiah(data?.total_spent ?? 0)}
                     </span>
                   </div>
                 </div>

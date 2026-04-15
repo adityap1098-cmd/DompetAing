@@ -1,19 +1,6 @@
 // ── Currency Formatter ──
-export function formatRupiah(amount: number, opts: { compact?: boolean } = {}): string {
-  if (opts.compact) {
-    if (Math.abs(amount) >= 1_000_000_000) {
-      return `Rp ${(amount / 1_000_000_000).toFixed(1)}M`;
-    }
-    if (Math.abs(amount) >= 1_000_000) {
-      return `Rp ${(amount / 1_000_000).toFixed(1)}Jt`;
-    }
-    if (Math.abs(amount) >= 1_000) {
-      return `Rp ${(amount / 1_000).toFixed(0)}rb`;
-    }
-    return `Rp ${amount}`;
-  }
-
-  // Intl formatter produces "Rp 20.658.152" with non-breaking space — normalize to regular space
+export function formatRupiah(amount: number, _opts: { compact?: boolean } = {}): string {
+  // Always display full number with thousand separators — e.g. "Rp 1.850.000"
   const formatted = new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
@@ -21,7 +8,7 @@ export function formatRupiah(amount: number, opts: { compact?: boolean } = {}): 
     maximumFractionDigits: 0,
   }).format(amount);
 
-  // Replace any Unicode space variants (narrow no-break space U+202F, no-break space U+00A0) with regular space
+  // Normalize Unicode space variants (U+202F, U+00A0) to regular space
   return formatted.replace(/\s+/g, " ").trim();
 }
 

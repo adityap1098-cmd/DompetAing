@@ -7,10 +7,10 @@ export function useHideBalance() {
 
   function formatAmount(
     amount: number,
-    opts: { compact?: boolean } = {}
+    _opts: { compact?: boolean } = {}
   ): string {
     if (hideBalance) return "Rp ****";
-    return formatRupiah(amount, opts);
+    return formatRupiah(amount);
   }
 
   return { hideBalance, formatAmount };

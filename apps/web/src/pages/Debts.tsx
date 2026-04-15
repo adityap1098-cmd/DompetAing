@@ -145,14 +145,14 @@ export function DebtsPage() {
             <div className="bg-white dark:bg-[#1C1D1A] rounded-[12px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] p-3">
               <p className="text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] uppercase tracking-wide mb-1">Total Hutang</p>
               <p className="font-mono text-[13px] font-semibold text-[#C94A1C] dark:text-[#E87340]">
-                {formatRupiah(summary.total_hutang, { compact: true })}
+                {formatRupiah(summary.total_hutang)}
               </p>
               <p className="text-[9px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5">{summary.hutang_active_count} aktif</p>
             </div>
             <div className="bg-white dark:bg-[#1C1D1A] rounded-[12px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] p-3">
               <p className="text-[9px] font-bold text-[#9E9B98] dark:text-[#4A4948] uppercase tracking-wide mb-1">Total Piutang</p>
               <p className="font-mono text-[13px] font-semibold text-[#1E8A5A] dark:text-[#4CAF7A]">
-                {formatRupiah(summary.total_piutang, { compact: true })}
+                {formatRupiah(summary.total_piutang)}
               </p>
               <p className="text-[9px] text-[#6B6864] dark:text-[#9E9B96] mt-0.5">{summary.piutang_active_count} aktif</p>
             </div>

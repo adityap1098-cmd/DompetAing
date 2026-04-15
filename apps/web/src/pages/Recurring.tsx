@@ -88,7 +88,7 @@ export function RecurringPage() {
                 Keluar / bulan
               </p>
               <p className="text-[15px] font-bold font-mono text-[#C94A1C] dark:text-[#E87340]">
-                {formatRupiah(summary.total_expense_monthly, { compact: true })}
+                {formatRupiah(summary.total_expense_monthly)}
               </p>
               <p className="text-[9px] text-[#9E9B98] dark:text-[#4A4948]">estimasi</p>
             </div>
@@ -97,7 +97,7 @@ export function RecurringPage() {
                 Masuk / bulan
               </p>
               <p className="text-[15px] font-bold font-mono text-[#1E8A5A] dark:text-[#4CAF7A]">
-                {formatRupiah(summary.total_income_monthly, { compact: true })}
+                {formatRupiah(summary.total_income_monthly)}
               </p>
               <p className="text-[9px] text-[#9E9B98] dark:text-[#4A4948]">estimasi</p>
             </div>

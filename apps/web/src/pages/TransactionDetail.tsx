@@ -90,7 +90,7 @@ export function TransactionDetailPage() {
         <p className="text-[15px] font-extrabold text-center">{txn.description}</p>
         <p className="text-[10px] opacity-80 text-center mt-0.5">{categoryLabel}</p>
         <p className="font-mono text-[24px] font-semibold text-center mt-2.5" style={{ color: amountTextColor }}>
-          {sign}Rp {formatRupiah(txn.amount).replace("Rp\u00a0", "").replace("Rp ", "")}
+          {sign}{formatRupiah(txn.amount)}
         </p>
       </div>
 

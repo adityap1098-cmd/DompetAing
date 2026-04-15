@@ -177,7 +177,7 @@ function HorizontalBarChart({ items }: { items: { label: string; icon: string; a
               <span className="text-[11px] font-medium text-[#1A1917] dark:text-[#F0EEE9] truncate">{item.label}</span>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[11px] font-bold font-mono text-[#1A1917] dark:text-[#F0EEE9]">{formatRupiah(item.amount, { compact: true })}</span>
+              <span className="text-[11px] font-bold font-mono text-[#1A1917] dark:text-[#F0EEE9]">{formatRupiah(item.amount)}</span>
               <span className="text-[10px] font-mono text-[#9E9B98] dark:text-[#4A4948] w-8 text-right">{item.percentage}%</span>
             </div>
           </div>
@@ -472,7 +472,7 @@ function CategoryPieSection({ title, categories, total, isExpense }: {
         <div className="w-28 h-28">
           <DonutChart
             data={categories.map((c) => ({ color: c.category.color, percentage: c.percentage }))}
-            centerLabel={formatRupiah(total, { compact: true })}
+            centerLabel={formatRupiah(total)}
           />
         </div>
       </div>
@@ -484,7 +484,7 @@ function CategoryPieSection({ title, categories, total, isExpense }: {
             <span className="flex-1 text-[11px] text-[#1A1917] dark:text-[#F0EEE9] truncate">{c.category.name}</span>
             <span className="text-[10px] font-semibold text-[#9E9B98] dark:text-[#4A4948] shrink-0 w-7 text-right">{c.percentage}%</span>
             <span className={`text-[11px] font-bold font-mono shrink-0 ${isExpense ? "text-[#C94A1C] dark:text-[#E87340]" : "text-[#1E8A5A] dark:text-[#4CAF7A]"}`}>
-              {formatRupiah(c.amount, { compact: true })}
+              {formatRupiah(c.amount)}
             </span>
           </div>
         ))}
@@ -709,7 +709,7 @@ export function ReportsPage() {
           <div className="grid grid-cols-3 gap-2">
             <MetricCard
               label="Pemasukan"
-              value={d ? formatRupiah(d.income, { compact: true }) : "—"}
+              value={d ? formatRupiah(d.income) : "—"}
               icon="↑"
               color="text-[#1E8A5A] dark:text-[#4CAF7A]"
               isLoading={isLoading}
@@ -717,7 +717,7 @@ export function ReportsPage() {
             />
             <MetricCard
               label="Pengeluaran"
-              value={d ? formatRupiah(d.expense, { compact: true }) : "—"}
+              value={d ? formatRupiah(d.expense) : "—"}
               icon="↓"
               color="text-[#C94A1C] dark:text-[#E87340]"
               isLoading={isLoading}
@@ -725,7 +725,7 @@ export function ReportsPage() {
             />
             <MetricCard
               label="Tabungan"
-              value={d ? formatRupiah(d.savings, { compact: true }) : "—"}
+              value={d ? formatRupiah(d.savings) : "—"}
               icon="💰"
               color={d && d.savings >= 0 ? "text-[#1E8A5A] dark:text-[#4CAF7A]" : "text-[#C94A1C] dark:text-[#E87340]"}
               isLoading={isLoading}
@@ -741,7 +741,7 @@ export function ReportsPage() {
           <div className="grid grid-cols-3 gap-2">
             <MetricCard
               label="Rata-rata/Hari"
-              value={d ? formatRupiah(d.daily_average, { compact: true }) : "—"}
+              value={d ? formatRupiah(d.daily_average) : "—"}
               icon="📊"
               isLoading={isLoading}
             />
@@ -758,7 +758,7 @@ export function ReportsPage() {
             />
             <MetricCard
               label="Hari Terboros"
-              value={d?.busiest_day ? formatRupiah(d.busiest_day.amount, { compact: true }) : "—"}
+              value={d?.busiest_day ? formatRupiah(d.busiest_day.amount) : "—"}
               icon="🔥"
               isLoading={isLoading}
               subValue={d?.busiest_day && (
@@ -831,7 +831,7 @@ export function ReportsPage() {
                       </p>
                     </div>
                     <span className="text-[12px] font-bold font-mono text-[#C94A1C] dark:text-[#E87340] shrink-0">
-                      {formatRupiah(t.amount, { compact: true })}
+                      {formatRupiah(t.amount)}
                     </span>
                   </Link>
                 ))}
@@ -856,7 +856,7 @@ export function ReportsPage() {
                           <span className="text-[11px] font-medium text-[#1A1917] dark:text-[#F0EEE9]">{b.category.name}</span>
                         </div>
                         <span className="text-[10px] font-mono text-[#6B6864] dark:text-[#9E9B96]">
-                          {formatRupiah(b.spent, { compact: true })} / {formatRupiah(b.budget, { compact: true })}
+                          {formatRupiah(b.spent)} / {formatRupiah(b.budget)}
                           <span className="ml-1 font-semibold" style={{ color: pctColor }}>({b.percentage}%)</span>
                         </span>
                       </div>
@@ -966,10 +966,10 @@ export function ReportsPage() {
                         <tr key={i} className="border-b border-[rgba(0,0,0,0.04)] dark:border-[rgba(255,255,255,0.04)]">
                           <td className="py-2 font-medium text-[#1A1917] dark:text-[#F0EEE9]">{row.label}</td>
                           <td className="py-2 text-right font-mono text-[#6B6864] dark:text-[#9E9B96]">
-                            {isCurrency ? formatRupiah(row.prev, { compact: true }) : row.prev}
+                            {isCurrency ? formatRupiah(row.prev) : row.prev}
                           </td>
                           <td className="py-2 text-right font-mono font-semibold text-[#1A1917] dark:text-[#F0EEE9]">
-                            {isCurrency ? formatRupiah(row.curr, { compact: true }) : row.curr}
+                            {isCurrency ? formatRupiah(row.curr) : row.curr}
                           </td>
                           <td className={`py-2 text-right font-mono font-semibold ${isGood ? "text-[#10b981]" : "text-[#ef4444]"}`}>
                             {row.change > 0 ? "↑" : row.change < 0 ? "↓" : "—"} {Math.abs(row.change)}%

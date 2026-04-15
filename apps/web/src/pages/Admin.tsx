@@ -83,7 +83,7 @@ function OverviewTab({ stats, loading }: { stats: ReturnType<typeof useAdminStat
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-accent-500 dark:bg-accent-dark rounded-[14px] p-3 text-white">
           <p className="text-[10px] opacity-75">💰 Total Revenue</p>
-          <p className="font-mono text-[16px] font-bold mt-0.5">{formatRupiah(stats.total_revenue, { compact: true })}</p>
+          <p className="font-mono text-[16px] font-bold mt-0.5">{formatRupiah(stats.total_revenue)}</p>
         </div>
         <div className="bg-white dark:bg-[#1C1D1A] rounded-[14px] border border-[rgba(0,0,0,0.08)] dark:border-[rgba(255,255,255,0.07)] p-3">
           <p className="text-[10px] text-[#9E9B98] dark:text-[#4A4948]">📝 Transaksi</p>
